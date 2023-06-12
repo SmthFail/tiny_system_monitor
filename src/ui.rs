@@ -10,6 +10,12 @@ use gpu_info::GpuAll;
 use crate::cpu_info;
 use cpu_info::CpuInfo;
 
+use crate::DeviceTile;
+
+extern crate unicode_width;
+use unicode_width::UnicodeWidthStr;
+
+
 pub fn calculate_progress_bar(
     width: u16,
     lead: String,
@@ -17,10 +23,19 @@ pub fn calculate_progress_bar(
     trail: String,
 ) -> String {
     let mut progress_string = lead.to_owned();
+    let mut symbol = String::from("|"); //  🐱  TODO pass symbol from app config
+    
+    let symbol_width: usize = symbol.width();
 
-    let progress_bar_width = width - lead.chars().count() as u16 - trail.chars().count() as u16;
-
-    let mut symbol = String::from("|");
+    
+    let progress_bar_width = width  
+        - lead.as_str().width() as u16 
+        - trail.as_str().width() as u16;
+        
+    
+    //progress_bar_width = progress_bar_width / symbol_width as u16;
+    
+    
     if (0.0..0.5).contains(&progress_data) {
         symbol = symbol.green().to_string();
     } else if (0.5..=0.75).contains(&progress_data) {
@@ -29,15 +44,23 @@ pub fn calculate_progress_bar(
         symbol = symbol.red().to_string();
     }
 
-    for k in 0..progress_bar_width - 1 {
-        //TODO recognize why - 1 ???
-        if k < (progress_bar_width as f64 * progress_data) as u16 {
-            progress_string = progress_string + &symbol;
-        } else {
-            progress_string += " ";
-        }
+    
+    let load_width = (progress_bar_width as f64 * progress_data) as usize;
+   
+    
+
+    for _ in 0..load_width.div_ceil(symbol_width) {
+        progress_string = progress_string + &symbol;
     }
-    progress_string = progress_string + &trail;
+    
+    
+    
+    if progress_bar_width as usize - load_width != 0 {
+    	let empty_width = progress_bar_width as usize - load_width.div_ceil(symbol_width) * symbol_width - 1;
+    	progress_string += &" ".repeat(empty_width);
+    }; 
+        
+    progress_string += &trail;
     progress_string
 }
 
@@ -55,11 +78,13 @@ pub struct LayoutBbox {
     pub height: u16,
 }
 
+
 pub struct LayoutCPU {
     layout_header: String,
     layout_bbox: LayoutBbox,
     layout_device: CpuInfo,
 }
+
 
 impl LayoutCPU {
     fn new(layout_header: String, layout_bbox: LayoutBbox) -> Self {
@@ -140,6 +165,7 @@ impl LayoutCPU {
     }
 }
 
+
 pub struct LayoutGpu {
     layout_header: String,
     layout_bbox: LayoutBbox,
@@ -215,8 +241,8 @@ pub struct Ui {
     layouts_cpu: Vec<LayoutCPU>,
     layouts_gpu: Vec<LayoutGpu>,
     stdout: Stdout,
-    width: u16,
-    height: u16,
+    pub width: u16,
+    pub height: u16,
 }
 
 impl Ui {
@@ -248,9 +274,27 @@ impl Ui {
         };
     }
 
-    pub fn update_all(&mut self) {
+    pub fn update_all(&mut self, devices: &Vec<DeviceTile>) {
         self.clear_screen();
-        self.update_screen();
+        //self.update_screen();
+        
+        for device in &mut self.layouts_cpu[..] {
+            device.set_position(LayoutBbox {
+                top: devices[0].row ,
+                left: devices[0].col,
+                width: devices[0].width,
+                height: devices[0].height,
+            });
+        }
+
+        for device in &mut self.layouts_gpu[..] {
+            device.set_position(LayoutBbox {
+                top: devices[1].row,
+                left: devices[1].col,
+                width: devices[1].width,
+                height: devices[1].height,
+            });
+        }
 
         for device in &mut self.layouts_cpu[..] {
             device.show_data(&mut self.stdout);
@@ -262,7 +306,7 @@ impl Ui {
     }
 
     fn update_screen(&mut self) {
-        (self.width, self.height) = terminal::size().expect("Can't get terminal size");
+        //(self.width, self.height) = terminal::size().expect("Can't get terminal size");
         for device in &mut self.layouts_cpu[..] {
             device.set_position(LayoutBbox {
                 top: 0,

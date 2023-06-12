@@ -1,5 +1,6 @@
 use sysinfo::{CpuExt, System, SystemExt};
 
+
 pub struct CpuInfo {
     sys: System,
     cpus_usage: Vec<f64>,

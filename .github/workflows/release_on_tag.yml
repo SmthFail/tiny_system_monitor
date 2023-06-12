@@ -1,0 +1,43 @@
+name: Release
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - v[0-9]+.*
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: taiki-e/create-gh-release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  upload-assets:
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            build_tool: cross
+            name: linux
+          - target: x86_64-pc-windows-gnu
+            os: windows-latest
+            build_tool: cargo
+            name: windows
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: taiki-e/upload-rust-binary-action@v1
+        with:
+          archive: $bin-$tag-${{ matrix.name }}
+          build_tool: ${{ matrix.build_tool }}
+          target: ${{ matrix.target }}
+          bin: tsm
+          tar: unix
+          zip: windows
+          token: ${{ secrets.GITHUB_TOKEN }}

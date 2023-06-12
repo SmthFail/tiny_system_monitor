@@ -1,0 +1,20 @@
+{
+  "name": "cats",
+  "symbol": "🐱",
+  "devices": [ 
+    {
+      "type": "cpu",
+      "row": 0,
+      "col": 0,
+      "width": 1,
+      "height": 1
+    },
+    {
+      "type": "gpu",
+      "row": 0,
+      "col": 1,
+      "width": 1,
+      "height": 1      
+    }
+  ]
+}
