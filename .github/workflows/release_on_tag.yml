@@ -21,7 +21,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - target: x86_64-unknown-linux-musl
+          - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             build_tool: cross
             name: ubuntu-18.04+
@@ -40,6 +40,7 @@ jobs:
         with:
           archive: $bin-$tag-${{ matrix.name }}
           build_tool: ${{ matrix.build_tool }}
+          target: ${{ matrix.target }}
           bin: system_monitor
           tar: unix
           zip: windows
