@@ -20,7 +20,7 @@ fn main() -> Result<(), NvmlError> {
     let (col, row) = terminal::size().expect("Can't get terminal size"); //TODO catch resize
 
     // init UI
-    let mut ui = Ui::new(col, row);
+    let mut ui = Ui::new();
 
     ui.create_layout(
         String::from("CPU_USAGE"),
@@ -30,7 +30,7 @@ fn main() -> Result<(), NvmlError> {
             width: col / 2,
             height: row / 2,
         },
-        LayoutType::Cpu,
+        LayoutType::LayoutCPU,
     );
     ui.create_layout(
         String::from("GPU USAGE"),
@@ -40,7 +40,7 @@ fn main() -> Result<(), NvmlError> {
             width: col / 2,
             height: row / 2,
         },
-        LayoutType::Gpu,
+        LayoutType::LayoutGPU,
     );
 
     execute!(stdout, EnterAlternateScreen, cursor::Hide,).unwrap();
@@ -65,7 +65,7 @@ fn main() -> Result<(), NvmlError> {
             // Timeout expired and no `Event` is available
         }
         stdout.flush().unwrap();
-        std::thread::sleep(std::time::Duration::from_millis(500)); //TODO check
+        std::thread::sleep(Duration::from_millis(500)); //TODO check
     }
     disable_raw_mode().unwrap();
     Ok(())

@@ -41,11 +41,17 @@ pub fn calculate_progress_bar(
     progress_string
 }
 
-#[derive(Default, PartialEq)]
+#[derive(Clone, Copy, Default, PartialEq)]
 pub enum LayoutType {
     #[default]
-    Cpu,
-    Gpu,
+    LayoutCPU,
+    LayoutGPU,
+}
+
+pub trait Device {
+    fn set_position(&mut self, layout_bbox: LayoutBbox);
+    fn draw(&mut self, stdout: &mut Stdout);
+    fn get_type(&self) -> LayoutType;
 }
 
 pub struct LayoutBbox {
@@ -59,6 +65,7 @@ pub struct LayoutCPU {
     layout_header: String,
     layout_bbox: LayoutBbox,
     layout_device: CpuInfo,
+    layout_type: LayoutType,
 }
 
 impl LayoutCPU {
@@ -67,14 +74,17 @@ impl LayoutCPU {
             layout_header: layout_header.bold().to_string(),
             layout_bbox,
             layout_device: CpuInfo::new(),
+            layout_type: LayoutType::LayoutCPU,
         }
     }
+}
 
+impl Device for LayoutCPU {
     fn set_position(&mut self, layout_bbox: LayoutBbox) {
         self.layout_bbox = layout_bbox;
     }
 
-    fn show_data(&mut self, stdout: &mut Stdout) {
+    fn draw(&mut self, stdout: &mut Stdout) {
         self.layout_device.update();
 
         execute!(
@@ -138,12 +148,17 @@ impl LayoutCPU {
         )
         .unwrap();
     }
+
+    fn get_type(&self) -> LayoutType {
+        self.layout_type
+    }
 }
 
 pub struct LayoutGpu {
     layout_header: String,
     layout_bbox: LayoutBbox,
     layout_device: GpuAll,
+    layout_type: LayoutType,
 }
 
 impl LayoutGpu {
@@ -153,14 +168,17 @@ impl LayoutGpu {
             layout_header: layout_header.bold().to_string(),
             layout_bbox,
             layout_device: device,
+            layout_type: LayoutType::LayoutGPU,
         }
     }
+}
 
+impl Device for LayoutGpu {
     fn set_position(&mut self, layout_bbox: LayoutBbox) {
         self.layout_bbox = layout_bbox;
     }
 
-    fn show_data(&mut self, stdout: &mut Stdout) {
+    fn draw(&mut self, stdout: &mut Stdout) {
         self.layout_device.update();
 
         execute!(
@@ -209,24 +227,29 @@ impl LayoutGpu {
             new_top += 4;
         }
     }
+    fn get_type(&self) -> LayoutType {
+        self.layout_type
+    }
 }
 
 pub struct Ui {
-    layouts_cpu: Vec<LayoutCPU>,
-    layouts_gpu: Vec<LayoutGpu>,
     stdout: Stdout,
     width: u16,
     height: u16,
+    grid_width: u16,
+    grid_height: u16,
+    layouts: Vec<Box<dyn Device>>,
 }
 
 impl Ui {
-    pub fn new(cols: u16, rows: u16) -> Self {
+    pub fn new() -> Self {
         Self {
-            layouts_cpu: Vec::new(),
-            layouts_gpu: Vec::new(),
             stdout: stdout(),
-            width: cols,
-            height: rows,
+            width: 1,
+            height: 1,
+            grid_height: 1,
+            grid_width: 1,
+            layouts: Vec::new(),
         }
     }
 
@@ -237,48 +260,51 @@ impl Ui {
         layout_type: LayoutType,
     ) {
         match layout_type {
-            LayoutType::Gpu => {
+            LayoutType::LayoutGPU => {
                 let device = LayoutGpu::new(layout_header, layout_bbox);
-                self.layouts_gpu.push(device);
+                self.layouts.push(Box::new(device));
             }
-            LayoutType::Cpu => {
+            LayoutType::LayoutCPU => {
                 let device = LayoutCPU::new(layout_header, layout_bbox);
-                self.layouts_cpu.push(device);
+                self.layouts.push(Box::new(device));
             }
         };
     }
 
     pub fn update_all(&mut self) {
         self.clear_screen();
+
         self.update_screen();
 
-        for device in &mut self.layouts_cpu[..] {
-            device.show_data(&mut self.stdout);
+        for layout in &mut self.layouts {
+            layout.draw(&mut self.stdout);
         }
-        for device in &mut self.layouts_gpu[..] {
-            device.show_data(&mut self.stdout);
-        }
+
         self.show_status_line();
     }
 
     fn update_screen(&mut self) {
         (self.width, self.height) = terminal::size().expect("Can't get terminal size");
-        for device in &mut self.layouts_cpu[..] {
-            device.set_position(LayoutBbox {
-                top: 0,
-                left: 0,
-                width: self.width / 2,
-                height: self.height / 2,
-            });
-        }
 
-        for device in &mut self.layouts_gpu[..] {
-            device.set_position(LayoutBbox {
-                top: 0,
-                left: self.width / 2 + 1,
-                width: self.width / 2,
-                height: self.height / 2,
-            });
+        for device in &mut self.layouts[..] {
+            match device.get_type() {
+                LayoutType::LayoutCPU => {
+                    device.set_position(LayoutBbox {
+                        top: 0,
+                        left: 0,
+                        width: self.width / 2,
+                        height: self.height / 2,
+                    });
+                }
+                LayoutType::LayoutGPU => {
+                    device.set_position(LayoutBbox {
+                        top: 0,
+                        left: self.width / 2 + 1,
+                        width: self.width / 2,
+                        height: self.height / 2,
+                    });
+                }
+            }
         }
     }
 
