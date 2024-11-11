@@ -1,72 +1,70 @@
-mod cpu_info;
-mod gpu_info;
-mod ui;
-use crossterm::event::{poll, read, Event, KeyCode, KeyEvent, KeyModifiers};
-use crossterm::terminal::{
-    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
-};
-use crossterm::{cursor, execute, terminal};
-use nvml_wrapper::error::NvmlError;
-use std::io::{stdout, Write};
-use std::time::Duration;
+use::std::{env, fs};
+use::std::process::exit;
+use::serde::{Deserialize, Serialize};
+use::serde_json;
 
-use crate::ui::LayoutBbox;
-use ui::{LayoutType, Ui};
+#[derive(Serialize, Deserialize, Debug)]
+struct Device {
+    #[serde(rename="type")]
+    device_type: String,
+    #[serde(rename="topLeft")]
+    top_left: (u8, u8),
+    width: u8,
+    height: u8
+}
 
-fn main() -> Result<(), NvmlError> {
-    // init stdout, cpu and nvidia monitors
-    let mut stdout = stdout();
 
-    let (col, row) = terminal::size().expect("Can't get terminal size"); //TODO catch resize
 
-    // init UI
-    let mut ui = Ui::new(col, row);
+#[derive(Serialize, Deserialize, Debug)]
+struct AppConfig {
+    #[serde(default="get_default_name")]
+    name: String,
+    devices: Vec<Device> 
+    
+}
 
-    ui.create_layout(
-        String::from("CPU_USAGE"),
-        LayoutBbox {
-            top: 0,
-            left: 0,
-            width: col / 2,
-            height: row / 2,
-        },
-        LayoutType::Cpu,
-    );
-    ui.create_layout(
-        String::from("GPU USAGE"),
-        LayoutBbox {
-            top: 0,
-            left: col / 2 + 1,
-            width: col / 2,
-            height: row / 2,
-        },
-        LayoutType::Gpu,
-    );
+fn get_default_name() -> String {
+    "default".to_string()
+}
 
-    execute!(stdout, EnterAlternateScreen, cursor::Hide,).unwrap();
-    enable_raw_mode().unwrap();
-
-    loop {
-        ui.update_all();
-
-        if poll(Duration::from_millis(500)).unwrap() {
-            match read().unwrap() {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    modifiers: KeyModifiers::NONE,
-                    ..
-                }) => {
-                    execute!(stdout, LeaveAlternateScreen, cursor::Show).unwrap();
-                    break;
-                }
-                _ => (),
-            }
-        } else {
-            // Timeout expired and no `Event` is available
+impl AppConfig {
+    pub fn new(mut config_name: String) -> Self {
+        if config_name.is_empty() {
+            config_name = "default".to_string()
+            // TODO get default config from memory not file
         }
-        stdout.flush().unwrap();
-        std::thread::sleep(std::time::Duration::from_millis(500)); //TODO check
+        else {
+            // TODO get config file here
+        }
+        let config_path = format!("/home/smthfail/work/git/system_monitor/config/{config_name}.json");
+        let devices: Vec<Device> = match fs::read_to_string(&config_path) {
+            Ok(content) => serde_json::from_str(&content).unwrap_or_else(|err| {
+                eprintln!("ERROR: Could not deserialize file with error: {err}");
+                exit(1)
+            }),
+            Err(err) => {
+                eprintln!("ERROR: Could not open file in {config_path} with error: {err}");
+                exit(1)
+            }
+        }; 
+        AppConfig{
+            name: config_name,
+            devices
+        }
     }
-    disable_raw_mode().unwrap();
-    Ok(())
+}
+
+fn main() {
+    let args: Vec<String> = env::args().collect();
+  
+    let config = match args.len() - 1 {
+        0 => AppConfig::new(String::new()),
+        1 => AppConfig::new(args[1].clone()),
+        _ => { 
+            eprint!("ERROR: Invalid number of arguments");
+            return;
+        }
+    };
+
+    println!("{:?}", &config)
 }
