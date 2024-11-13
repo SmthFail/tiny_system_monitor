@@ -1,56 +1,42 @@
-use::std::{env, fs};
-use::std::process::exit;
-use::serde::{Deserialize, Serialize};
-use::serde_json;
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Device {
-    #[serde(rename="type")]
-    device_type: String,
-    #[serde(rename="topLeft")]
-    top_left: (u8, u8),
-    width: u8,
-    height: u8
-}
+use::std::env;
+mod file_config;
+use crate::file_config::{FileConfig, FileDevice};
 
 
-
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 struct AppConfig {
-    #[serde(default="get_default_name")]
     name: String,
-    devices: Vec<Device> 
+    devices: Vec<FileDevice> 
     
 }
 
-fn get_default_name() -> String {
-    "default".to_string()
-}
 
 impl AppConfig {
-    pub fn new(mut config_name: String) -> Self {
-        if config_name.is_empty() {
-            config_name = "default".to_string()
-            // TODO get default config from memory not file
-        }
-        else {
-            // TODO get config file here
-        }
-        let config_path = format!("/home/smthfail/work/git/system_monitor/config/{config_name}.json");
-        let devices: Vec<Device> = match fs::read_to_string(&config_path) {
-            Ok(content) => serde_json::from_str(&content).unwrap_or_else(|err| {
-                eprintln!("ERROR: Could not deserialize file with error: {err}");
-                exit(1)
-            }),
-            Err(err) => {
-                eprintln!("ERROR: Could not open file in {config_path} with error: {err}");
-                exit(1)
-            }
-        }; 
-        AppConfig{
-            name: config_name,
-            devices
-        }
+    pub fn new(config_name: String) -> Self {
+        let file_config = FileConfig::new(config_name);
+        let config = AppConfig{
+             name: file_config.name,
+             devices: file_config.devices,
+        };
+        config.validate_devices();
+        config
+    }
+
+    fn validate_devices(&self)  {
+        // get grid
+       let mut max_w = 1;
+       let mut max_h = 1;
+       for device in &self.devices {
+           let device_max_w = device.top_left.1 + device.width;
+           if device_max_w > max_w {
+               max_w = device_max_w;
+           }
+           let device_max_h = device.top_left.0 + device.height;
+           if device_max_h > max_h {
+               max_h = device_max_h;
+           }
+       } 
+       println!("Max w {} and max h {}", max_w, max_h);
     }
 }
 
@@ -65,6 +51,6 @@ fn main() {
             return;
         }
     };
-
+    println!("Config: {} loaded!", config.name);
     println!("{:?}", &config)
 }
