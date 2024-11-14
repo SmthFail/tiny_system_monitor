@@ -3,7 +3,7 @@ use::serde_json;
 use::std::fs;
 use::std::process::exit;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FileDevice {
     #[serde(rename="type")]
     pub device_type: String,
@@ -15,7 +15,7 @@ pub struct FileDevice {
 
 
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FileConfig {
     #[serde(default="get_default_name")]
     pub name: String,
