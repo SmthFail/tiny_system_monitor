@@ -23,17 +23,17 @@ pub fn calculate_progress_bar(
     trail: String,
 ) -> String {
     let mut progress_string = lead.to_owned();
-    let mut symbol = String::from("|"); //  🐱
+    let mut symbol = String::from("🐱"); //  🐱
     
     let symbol_width: usize = symbol.width();
 
     
-    let mut progress_bar_width = width as u16 
+    let progress_bar_width = width  
         - lead.as_str().width() as u16 
         - trail.as_str().width() as u16;
         
     
-    progress_bar_width = progress_bar_width / symbol_width as u16;
+    //progress_bar_width = progress_bar_width / symbol_width as u16;
     
     
     if (0.0..0.5).contains(&progress_data) {
@@ -45,21 +45,23 @@ pub fn calculate_progress_bar(
     }
 
     
-    let mut full_width = (progress_bar_width as f64 * progress_data) as usize;
+    let load_width = (progress_bar_width as f64 * progress_data) as usize;
    
     
 
-    for _ in 0..full_width {
+    for _ in 0..load_width.div_ceil(symbol_width) {
         progress_string = progress_string + &symbol;
     }
     
     
-    for _ in full_width..progress_bar_width as usize {
-        progress_string += &" ".repeat(symbol_width as usize);
-    }
-
     
-    progress_string = progress_string + &trail;
+    let mut empty_width = 0;
+    if progress_bar_width as usize - load_width != 0 {
+    	empty_width = progress_bar_width as usize - load_width.div_ceil(symbol_width) * symbol_width - 1;
+    	progress_string += &" ".repeat(empty_width);
+    }; 
+        
+    progress_string += &trail;
     progress_string
 }
 
