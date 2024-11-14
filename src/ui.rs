@@ -12,6 +12,10 @@ use cpu_info::CpuInfo;
 
 use crate::DeviceTile;
 
+extern crate unicode_width;
+use unicode_width::UnicodeWidthStr;
+
+
 pub fn calculate_progress_bar(
     width: u16,
     lead: String,
@@ -19,10 +23,19 @@ pub fn calculate_progress_bar(
     trail: String,
 ) -> String {
     let mut progress_string = lead.to_owned();
+    let mut symbol = String::from("|"); //  🐱
+    
+    let symbol_width: usize = symbol.width();
 
-    let progress_bar_width = width - lead.chars().count() as u16 - trail.chars().count() as u16;
-
-    let mut symbol = String::from("|");
+    
+    let mut progress_bar_width = width as u16 
+        - lead.as_str().width() as u16 
+        - trail.as_str().width() as u16;
+        
+    
+    progress_bar_width = progress_bar_width / symbol_width as u16;
+    
+    
     if (0.0..0.5).contains(&progress_data) {
         symbol = symbol.green().to_string();
     } else if (0.5..=0.75).contains(&progress_data) {
@@ -31,14 +44,21 @@ pub fn calculate_progress_bar(
         symbol = symbol.red().to_string();
     }
 
-    for k in 0..progress_bar_width - 1 {
-        //TODO recognize why - 1 ???
-        if k < (progress_bar_width as f64 * progress_data) as u16 {
-            progress_string = progress_string + &symbol;
-        } else {
-            progress_string += " ";
-        }
+    
+    let mut full_width = (progress_bar_width as f64 * progress_data) as usize;
+   
+    
+
+    for _ in 0..full_width {
+        progress_string = progress_string + &symbol;
     }
+    
+    
+    for _ in full_width..progress_bar_width as usize {
+        progress_string += &" ".repeat(symbol_width as usize);
+    }
+
+    
     progress_string = progress_string + &trail;
     progress_string
 }
