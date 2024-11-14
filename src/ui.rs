@@ -10,6 +10,8 @@ use gpu_info::GpuAll;
 use crate::cpu_info;
 use cpu_info::CpuInfo;
 
+use crate::DeviceTile;
+
 pub fn calculate_progress_bar(
     width: u16,
     lead: String,
@@ -55,11 +57,13 @@ pub struct LayoutBbox {
     pub height: u16,
 }
 
+
 pub struct LayoutCPU {
     layout_header: String,
     layout_bbox: LayoutBbox,
     layout_device: CpuInfo,
 }
+
 
 impl LayoutCPU {
     fn new(layout_header: String, layout_bbox: LayoutBbox) -> Self {
@@ -140,6 +144,7 @@ impl LayoutCPU {
     }
 }
 
+
 pub struct LayoutGpu {
     layout_header: String,
     layout_bbox: LayoutBbox,
@@ -215,8 +220,8 @@ pub struct Ui {
     layouts_cpu: Vec<LayoutCPU>,
     layouts_gpu: Vec<LayoutGpu>,
     stdout: Stdout,
-    width: u16,
-    height: u16,
+    pub width: u16,
+    pub height: u16,
 }
 
 impl Ui {
@@ -248,9 +253,27 @@ impl Ui {
         };
     }
 
-    pub fn update_all(&mut self) {
+    pub fn update_all(&mut self, devices: &Vec<DeviceTile>) {
         self.clear_screen();
-        self.update_screen();
+        //self.update_screen();
+        
+        for device in &mut self.layouts_cpu[..] {
+            device.set_position(LayoutBbox {
+                top: devices[0].row ,
+                left: devices[0].col,
+                width: devices[0].width,
+                height: devices[0].height,
+            });
+        }
+
+        for device in &mut self.layouts_gpu[..] {
+            device.set_position(LayoutBbox {
+                top: devices[1].row,
+                left: devices[1].col,
+                width: devices[1].width,
+                height: devices[1].height,
+            });
+        }
 
         for device in &mut self.layouts_cpu[..] {
             device.show_data(&mut self.stdout);
@@ -262,7 +285,7 @@ impl Ui {
     }
 
     fn update_screen(&mut self) {
-        (self.width, self.height) = terminal::size().expect("Can't get terminal size");
+        //(self.width, self.height) = terminal::size().expect("Can't get terminal size");
         for device in &mut self.layouts_cpu[..] {
             device.set_position(LayoutBbox {
                 top: 0,

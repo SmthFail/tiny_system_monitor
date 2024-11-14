@@ -8,9 +8,9 @@ pub struct FileDevice {
     #[serde(rename="type")]
     pub device_type: String,
     #[serde(rename="topLeft")]
-    pub top_left: (u8, u8),
-    pub width: u8,
-    pub height: u8
+    pub top_left: (u16, u16),
+    pub width: u16,
+    pub height: u16
 }
 
 
