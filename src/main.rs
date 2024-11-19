@@ -1,6 +1,8 @@
 use::std::env;
+
+mod app_config;
 mod file_config;
-use crate::file_config::{FileConfig, FileDevice};
+use crate::app_config::{AppConfig, DeviceTile};
 
 use std::io::{stdout, Write};
 
@@ -20,91 +22,27 @@ use crate::ui::LayoutBbox;
 use ui::{LayoutType, Ui};
 
 
-
-
-#[derive(Debug)]
-struct DeviceTile {
-    name: String,
-   row: u16,
-   col: u16,
-   width: u16,
-   height: u16
+fn print_usage_messge() {
+    println!("Usage: ");
+    println!("system_monitor [<config_name>]"); // TODO change name and path behaivior
 }
 
-
-#[derive(Debug)]
-struct AppConfig {
-   name: String,
-   devices: Vec<FileDevice>, 
-   tiles: Vec<DeviceTile> 
-}
-
-
-impl AppConfig {
-    pub fn new(config_name: String) -> Self {
-        let file_config = FileConfig::new(config_name);
-        let device_tiles = Self::get_device_tiles(&file_config.devices, 100, 100);
-        AppConfig{
-             name: file_config.name,
-             devices: file_config.devices,
-             tiles: device_tiles
-        }
-    }
-
-    fn update_grid(&mut self, new_w: u16, new_h: u16) {
-        self.tiles = Self::get_device_tiles(&self.devices, new_w, new_h);
-    }
-
-    fn get_device_tiles(devices: &Vec<FileDevice>, new_w: u16, new_h: u16) -> Vec<DeviceTile> {
-        let mut tiles: Vec<DeviceTile> = Vec::new();
-        let (col_scale, row_scale) = Self::get_tile_scale(&devices.clone(), new_w, new_h);
-        for device in devices {
-            tiles.push(
-                DeviceTile {
-                    name: device.device_type.clone(),
-                    row: (device.top_left.0 as f32 * row_scale) as u16,
-                    col: (device.top_left.1 as f32 * col_scale) as u16,
-                    width: (device.width as f32 * col_scale) as u16,
-                    height: (device.height as f32 * row_scale) as u16
-                }
-            )
-        }
-        tiles
-    }
-
-    fn get_tile_scale(devices: &Vec<FileDevice>, term_width: u16, term_height:u16) -> (f32, f32)  {
-        // get grid
-       let mut max_w= 1;
-       let mut max_h= 1;
-       for device in devices {
-           let device_max_w = device.top_left.1 + device.width;
-           if device_max_w > max_w {
-               max_w = device_max_w;
-           }
-           let device_max_h = device.top_left.0 + device.height;
-           if device_max_h > max_h {
-               max_h = device_max_h;
-           }
-       }
-       let col_scale: f32 = (term_width / max_w).into();
-       let row_scale: f32 = (term_height / max_h).into();
-
-
-       println!("Max w {} and max h {}", max_w, max_h);
-       println!("Row scale {} and col scale {}", row_scale, col_scale);
-       (col_scale, row_scale)
-    }
-}
 
 fn main() {
     //read and generate app config
     let args: Vec<String> = env::args().collect();
   
+    let (screen_w, screen_h) = terminal::size().expect(
+        "Can't get terminal size"
+    );
+
+
     let mut config = match args.len() - 1 {
-        0 => AppConfig::new(String::new()),
-        1 => AppConfig::new(args[1].clone()),
+        0 => AppConfig::new(String::new(), screen_w, screen_h),
+        1 => AppConfig::new(args[1].clone(), screen_w, screen_h),
         _ => { 
             eprint!("ERROR: Invalid number of arguments");
+            print_usage_messge();
             return;
         }
     };
@@ -113,16 +51,8 @@ fn main() {
 
     // start main loop    
     let mut stdout = stdout();
-    
-    let (cols, rows) = terminal::size().expect(
-        "Can't get terminal size"
-    );
 
-    config.update_grid(cols, rows);
-
-
-    let mut ui = Ui::new(cols, rows);
-    println!("Terminal size: {} {}", cols, rows);
+    let mut ui = Ui::new(screen_w, screen_h);
     ui.create_layout(
         config.tiles[0].name.clone(),
         LayoutBbox {

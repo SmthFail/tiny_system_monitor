@@ -1,6 +1,7 @@
 use::serde::{Deserialize, Serialize};
 use::serde_json;
-use::std::fs;
+use::std::{env, fs};
+use std::path::PathBuf;
 use::std::process::exit;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -17,59 +18,66 @@ pub struct FileDevice {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FileConfig {
-    #[serde(default="get_default_name")]
     pub name: String,
+    pub symbol: String,
     pub devices: Vec<FileDevice> 
     
 }
 
-fn get_default_name() -> String {
-    "default".to_string()
+impl Default for FileConfig {
+    fn default() -> Self {
+        FileConfig{
+            name: "default".to_string(),
+            symbol: "|".to_string(),
+            devices: vec![
+                FileDevice{
+                    device_type: "cpu".to_string(),
+                    top_left: (0, 0),
+                    width: 1,
+                    height: 2
+                },
+                FileDevice{
+                    device_type: "gpu".to_string(),
+                    top_left: (0, 1),
+                    width: 2,
+                    height: 1
+                }
+            ]
+        }
+    }
 }
 
 impl FileConfig {
     pub fn new(config_name: String) -> Self {
         if config_name.is_empty() {
-            // TODO implement with structure default values
-            Self{
-                name: "default".to_string(),
-                devices: vec![
-                    FileDevice{
-                        device_type: "cpu".to_string(),
-                        top_left: (0, 0),
-                        width: 1,
-                        height: 2
-                    },
-                    FileDevice{
-                        device_type: "gpu".to_string(),
-                        top_left: (0, 1),
-                        width: 2,
-                        height: 1
-                    }
-                ]
-            }
+            Self::default()
         }
         else {
-            let config_path = format!("/home/user/works/git/system_monitor/config/{config_name}.json");
+            let home_dir = if cfg!(target_os="windows") {
+                env::var("USERPROFILE").expect("Can't get user directory")
+            } else {
+                env::var("HOME").expect("Can't get home directory")
+            };
+
+            let mut config_path = PathBuf::from(home_dir);
+            config_path.push(format!(".config/csm/{config_name}.json"));
+
             Self::load_config_from_file(&config_path)
         }
     }
 
-    fn load_config_from_file(path: &str) -> Self {
-        let devices: Vec<FileDevice> = match fs::read_to_string(path) {
+    fn load_config_from_file(path: &PathBuf) -> Self {
+        let file_config: FileConfig = match fs::read_to_string(path) {
             Ok(content) => serde_json::from_str(&content).unwrap_or_else(|err| {
                 eprintln!("ERROR: Could not deserialize file with error: {err}");
                 exit(1)
             }),
             Err(err) => {
-                eprintln!("ERROR: Could not open file in {path} with error: {err}");
+                eprintln!("ERROR: Could not open file in {} with error: {}", path.display(), err);
                 exit(1)
             }
-        }; 
-        Self{
-            name: path.to_string(),
-            devices
-        } 
+        };
+        file_config
     }
 
 }

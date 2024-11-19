@@ -23,7 +23,7 @@ pub fn calculate_progress_bar(
     trail: String,
 ) -> String {
     let mut progress_string = lead.to_owned();
-    let mut symbol = String::from("🐱"); //  🐱
+    let mut symbol = String::from("|"); //  🐱  TODO pass symbol from app config
     
     let symbol_width: usize = symbol.width();
 
@@ -55,9 +55,8 @@ pub fn calculate_progress_bar(
     
     
     
-    let mut empty_width = 0;
     if progress_bar_width as usize - load_width != 0 {
-    	empty_width = progress_bar_width as usize - load_width.div_ceil(symbol_width) * symbol_width - 1;
+    	let empty_width = progress_bar_width as usize - load_width.div_ceil(symbol_width) * symbol_width - 1;
     	progress_string += &" ".repeat(empty_width);
     }; 
         
