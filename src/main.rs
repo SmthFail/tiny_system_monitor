@@ -24,7 +24,9 @@ use ui::{LayoutType, Ui};
 
 fn print_usage_messge() {
     println!("Usage: ");
-    println!("system_monitor [<config_name>]"); // TODO change name and path behaivior
+    println!("system_monitor  [Options]"); // TODO change name and path behaivior
+    println!("Options:");
+    println!("  <config_name>   Read config with the given name. Config must be placed in ~/.config/csm/<config_name>.json");
 }
 
 
@@ -41,13 +43,12 @@ fn main() {
         0 => AppConfig::new(String::new(), screen_w, screen_h),
         1 => AppConfig::new(args[1].clone(), screen_w, screen_h),
         _ => { 
-            eprint!("ERROR: Invalid number of arguments");
+            eprintln!("ERROR: Invalid number of arguments");
             print_usage_messge();
             return;
         }
     };
     println!("Config: {} loaded!", config.name);
-    println!("{:?}", &config);
 
     // start main loop    
     let mut stdout = stdout();
