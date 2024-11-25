@@ -8,8 +8,8 @@ use::std::process::exit;
 pub struct FileDevice {
     #[serde(rename="type")]
     pub device_type: String,
-    #[serde(rename="topLeft")]
-    pub top_left: (u16, u16),
+    pub row: u16,
+    pub col: u16,
     pub width: u16,
     pub height: u16
 }
@@ -32,13 +32,15 @@ impl Default for FileConfig {
             devices: vec![
                 FileDevice{
                     device_type: "cpu".to_string(),
-                    top_left: (0, 0),
+                    row: 0,
+                    col: 0,
                     width: 1,
                     height: 2
                 },
                 FileDevice{
                     device_type: "gpu".to_string(),
-                    top_left: (0, 1),
+                    row: 0, 
+                    col: 1,
                     width: 2,
                     height: 1
                 }

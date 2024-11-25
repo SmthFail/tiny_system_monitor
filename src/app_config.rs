@@ -37,13 +37,18 @@ impl AppConfig {
 
     fn get_device_tiles(devices: &Vec<FileDevice>, new_w: u16, new_h: u16) -> Vec<DeviceTile> {
         let mut tiles: Vec<DeviceTile> = Vec::new();
+        
+        if Self::check_device_tiles_overlap(devices) {
+            panic!("Device overlaped. Check config");
+        }
+
         let (col_scale, row_scale) = Self::get_tile_scale(&devices.clone(), new_w, new_h);
         for device in devices {
             tiles.push(
-                DeviceTile {
+                DeviceTile {    
                     name: device.device_type.clone(),
-                    row: (device.top_left.0 as f32 * row_scale) as u16,
-                    col: (device.top_left.1 as f32 * col_scale) as u16,
+                    row: (device.row as f32 * row_scale) as u16,
+                    col: (device.col as f32 * col_scale) as u16,
                     width: (device.width as f32 * col_scale) as u16,
                     height: (device.height as f32 * row_scale) as u16
                 }
@@ -52,16 +57,33 @@ impl AppConfig {
         tiles
     }
 
+    fn check_device_tiles_overlap(devices: &Vec<FileDevice>) -> bool {
+        for ind in 0..(devices.len() - 1) {
+            println!("Curent number of devices {ind}");
+            
+            if devices[ind].col >= devices[ind + 1].col + devices[ind + 1].width ||
+                devices[ind + 1].col >= devices[ind].col + devices[ind].width {
+                    return false;
+            }
+    
+            if devices[ind].row >= devices[ind + 1].row + devices[ind + 1].height ||
+                devices[ind + 1].row >= devices[ind].row + devices[ind].height {
+                    return false;
+            }
+        }
+        return true;
+    }
+
     fn get_tile_scale(devices: &Vec<FileDevice>, term_width: u16, term_height:u16) -> (f32, f32)  {
         // get grid
        let mut max_w= 1;
        let mut max_h= 1;
        for device in devices {
-           let device_max_w = device.top_left.1 + device.width;
+           let device_max_w = device.col + device.width;
            if device_max_w > max_w {
                max_w = device_max_w;
            }
-           let device_max_h = device.top_left.0 + device.height;
+           let device_max_h = device.row + device.height;
            if device_max_h > max_h {
                max_h = device_max_h;
            }

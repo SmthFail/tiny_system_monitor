@@ -4,13 +4,15 @@
   "devices": [ 
     {
       "type": "cpu",
-      "topLeft": [0, 0],
+      "row": 0,
+      "col": 0,
       "width": 1,
       "height": 1
     },
     {
       "type": "gpu",
-      "topLeft": [0, 0],
+      "row": 0,
+      "col": 1,
       "width": 1,
       "height": 1      
     }
