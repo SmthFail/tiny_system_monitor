@@ -41,3 +41,7 @@ For running from everywhere update rcfile (.bashrc, .zshrc etc)
 export PATH=$PATH:~/.tsm/bin
 ```
 
+### Use config file
+Example of config file can be found in repo/config_example/cats.json \
+Note that "symbol" field must be placed in config but didn't used (yet) \
+More description will be added soon
