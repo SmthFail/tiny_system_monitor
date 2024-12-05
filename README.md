@@ -1,20 +1,43 @@
-# System monitor
+# Tiny system monitor (tsm)
 
-A simple program for monitor cpu and gpu usage
+A simple customizable cross-platform system monitor for terminal. \
+Supports Linux and Windows. \
+Inspired by [htop](https://github.com/htop-dev/htop), [bottom](https://github.com/ClementTsang/bottom), 
+
+![Example](./thumbnail.png)
+
+## Table of contents
+- [Usage](#Usage)
+- [Features](#Features)
+- [Installaton](#Installation)
+  - [Linux](#Linux)
+
+## Usage
+You can use tiny system monitor with `tsm`
+- For run with config file use `tsm <config_file_name>`. Note that config file must be placed in `~/.config/tsm`
+- For help use `tsm -h`
 
 ## Features:
+- customizing widget behaviour;
 - monitor cpu usage;
 - monitor gpu usage (only Nvidia for now)
 
-## Plans:
-- monitor running cpu and gpu process;
-- interact running process (e.g. terminate and kill);
-- more interactive UI with possibility to config;
-- better error handling and user warning.
+## Installation
 
-## Installation:
+### From source
+Clone project and use cargo for buid 
+> cargo run
 
-For current time only build from source
+### Download latest version from releases
+Linux
+```
+curl -L -O https://github.com/SmthFail/tiny_system_monitor/releases/download/v0.3.0/tsm-v0.3.0-linux.tar.gz
+mkdir -p ~/.tsm/bin
+tar -xvf tsm-linux.tar.gz
+mv ./tsm ~/.tsm/bin
+```
+For running from everywhere update rcfile (.bashrc, .zshrc etc)
+```
+export PATH=$PATH:~/.tsm/bin
+```
 
-
-![Example](./thumbnail.png)

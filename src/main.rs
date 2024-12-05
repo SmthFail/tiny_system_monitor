@@ -27,6 +27,7 @@ fn print_usage_message() {
     println!("tsm  [Options]");
     println!("Options:");
     println!("  <config_name>   Read config with the given name. Config must be placed in ~/.config/tsm/<config_name>.json");
+    println!("  -h, --help      Print help message")
 }
 
 

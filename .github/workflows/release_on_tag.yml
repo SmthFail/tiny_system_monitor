@@ -24,11 +24,7 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             build_tool: cross
-            name: ubuntu-18.04+
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
-            build_tool: cargo
-            name: ubuntu-22.04+
+            name: linux
           - target: x86_64-pc-windows-gnu
             os: windows-latest
             build_tool: cargo
@@ -41,7 +37,7 @@ jobs:
           archive: $bin-$tag-${{ matrix.name }}
           build_tool: ${{ matrix.build_tool }}
           target: ${{ matrix.target }}
-          bin: system_monitor
+          bin: tsm
           tar: unix
           zip: windows
           token: ${{ secrets.GITHUB_TOKEN }}
