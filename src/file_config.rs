@@ -62,7 +62,7 @@ impl FileConfig {
             };
 
             let mut config_path = PathBuf::from(home_dir);
-            config_path.push(format!(".config/csm/{config_name}.json"));
+            config_path.push(format!(".config/tsm/{config_name}.json"));
 
             Self::load_config_from_file(&config_path)
         }

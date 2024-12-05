@@ -22,11 +22,11 @@ use crate::ui::LayoutBbox;
 use ui::{LayoutType, Ui};
 
 
-fn print_usage_messge() {
+fn print_usage_message() {
     println!("Usage: ");
-    println!("system_monitor  [Options]"); // TODO change name and path behaivior
+    println!("tsm  [Options]");
     println!("Options:");
-    println!("  <config_name>   Read config with the given name. Config must be placed in ~/.config/csm/<config_name>.json");
+    println!("  <config_name>   Read config with the given name. Config must be placed in ~/.config/tsm/<config_name>.json");
 }
 
 
@@ -41,10 +41,22 @@ fn main() {
 
     let mut config = match args.len() - 1 {
         0 => AppConfig::new(String::new(), screen_w, screen_h),
-        1 => AppConfig::new(args[1].clone(), screen_w, screen_h),
-        _ => { 
+        1 => match args[1].as_str() {
+            "-h" => {
+                print_usage_message();
+                return;
+            },
+            "--help" => {
+                print_usage_message();
+                return;
+            },
+            _ =>  AppConfig::new(args[1].clone(), screen_w, screen_h),
+ 
+
+        },
+                  _ => { 
             eprintln!("ERROR: Invalid number of arguments");
-            print_usage_messge();
+            print_usage_message();
             return;
         }
     };
