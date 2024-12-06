@@ -29,17 +29,16 @@ Clone project and use cargo for buid
 > cargo run
 
 ### Download latest version from releases
+
 Linux
 ```
-curl -L -O https://github.com/SmthFail/tiny_system_monitor/releases/download/v0.3.0/tsm-v0.3.0-linux.tar.gz
-mkdir -p ~/.tsm/bin
-tar -xvf tsm-linux.tar.gz
-mv ./tsm ~/.tsm/bin
+curl -fsSL https://raw.githubusercontent.com/SmthFail/tiny_system_monitor/main/install.sh | bash -s linux
 ```
 For running from everywhere update rcfile (.bashrc, .zshrc etc)
-```
-export PATH=$PATH:~/.tsm/bin
-```
+> export PATH=$PATH:~/.tsm/bin
+
+Windows
+Download binary from release and install it. Script install not tested yet
 
 ### Use config file
 Example of config file can be found in repo/config_example/cats.json \
