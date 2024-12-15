@@ -1,5 +1,5 @@
 use::std::env;
-
+use::std::process::exit;
 mod app_config;
 mod file_config;
 use crate::app_config::{AppConfig, DeviceTile};
@@ -21,6 +21,10 @@ mod ui;
 use crate::ui::LayoutBbox;
 use ui::{LayoutType, Ui};
 
+mod device_model;
+use device_model::{Device, DEVICE_REGISTRY};
+mod cpu_device;
+mod gpu_device;
 
 fn print_usage_message() {
     println!("Usage: ");
@@ -32,7 +36,6 @@ fn print_usage_message() {
 
 
 fn main() {
-    //read and generate app config
     let args: Vec<String> = env::args().collect();
   
     let (screen_w, screen_h) = terminal::size().expect(
@@ -40,7 +43,7 @@ fn main() {
     );
 
 
-    let mut config = match args.len() - 1 {
+    let config = match args.len() - 1 {
         0 => AppConfig::new(String::new(), screen_w, screen_h),
         1 => match args[1].as_str() {
             "-h" => {
@@ -62,6 +65,24 @@ fn main() {
         }
     };
     println!("Config: {} loaded!", config.name);
+
+    let mut devices: Vec<Box<dyn Device>> = Vec::new();
+    
+    for tile in config.tiles {
+        if let Some(factory) = DEVICE_REGISTRY.get(tile.name.as_str()) {
+           let device = (factory.create)(&tile);
+           devices.push(device);
+        }
+        else {
+            println!("Device {} not found in allowed list!", tile.name);
+        }
+    }
+
+    for device in devices {
+        device.show();
+    }
+
+    exit(1);
 
     // start main loop    
     let mut stdout = stdout();

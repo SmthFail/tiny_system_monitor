@@ -57,10 +57,8 @@ impl AppConfig {
         tiles
     }
 
-    fn check_device_tiles_overlap(devices: &Vec<FileDevice>) -> bool {
+    fn check_device_tiles_overlap(devices: &[FileDevice]) -> bool {
         for ind in 0..(devices.len() - 1) {
-            println!("Curent number of devices {ind}");
-            
             if devices[ind].col >= devices[ind + 1].col + devices[ind + 1].width ||
                 devices[ind + 1].col >= devices[ind].col + devices[ind].width {
                     return false;
@@ -71,11 +69,10 @@ impl AppConfig {
                     return false;
             }
         }
-        return true;
+        true
     }
 
     fn get_tile_scale(devices: &Vec<FileDevice>, term_width: u16, term_height:u16) -> (f32, f32)  {
-        // get grid
        let mut max_w= 1;
        let mut max_h= 1;
        for device in devices {
