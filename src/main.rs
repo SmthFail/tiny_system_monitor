@@ -70,7 +70,7 @@ fn main() {
     
     for tile in config.tiles {
         if let Some(factory) = DEVICE_REGISTRY.get(tile.name.as_str()) {
-           let device = (factory.create)(&tile);
+           let device = (factory)(&tile);
            devices.push(device);
         }
         else {

@@ -9,27 +9,18 @@ pub trait Device {
     fn show(&self);
 }
 
-pub struct DeviceFactory {
-    pub name: &'static str,
-    pub create: fn(device_tile: &DeviceTile) -> Box<dyn Device>,
-}
+type DeviceFactory = HashMap<&'static str, fn(&DeviceTile) -> Box<dyn Device>>; 
 
-pub static DEVICE_REGISTRY: Lazy<HashMap<&'static str, DeviceFactory>> = 
+pub static DEVICE_REGISTRY: Lazy<DeviceFactory> = 
     Lazy::new(|| {
-        let mut registry = HashMap::new();
+        let mut registry: DeviceFactory = HashMap::new();
         registry.insert(
             "cpu",
-            DeviceFactory {
-                name: "cpu",
-                create: cpu_device::create_device,
-            }
+            cpu_device::create_device, 
         );
         registry.insert(
             "gpu",
-            DeviceFactory{
-                name: "gpu",
-                create: gpu_device::create_device,
-            }
+            gpu_device::create_device
         );
     registry
 });
