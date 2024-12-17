@@ -10,7 +10,8 @@ struct GpuDevice {
     col: u16,
     row: u16,
     width: u16,
-    height: u16
+    height: u16,
+    print_data: Vec<String>
 }
 
 impl Device for GpuDevice {
@@ -20,15 +21,19 @@ impl Device for GpuDevice {
             width: device_tile.width,
             height: device_tile.height,
             col: device_tile.col,
-            row: device_tile.row
+            row: device_tile.row,
+            print_data: vec!["0".to_string(); device_tile.width.into()]
         }
+    }
+    fn resize(&mut self) {
+
     }
 
     fn update(&mut self) {
 
     }    
 
-    fn show(&self) {
-        println!("Gpu device");
+    fn show(&mut self) -> &Vec<String> {
+        &self.print_data
     }
 }

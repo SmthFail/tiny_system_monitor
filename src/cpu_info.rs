@@ -1,6 +1,5 @@
 use sysinfo::{CpuExt, System, SystemExt};
 
-
 pub struct CpuInfo {
     sys: System,
     cpus_usage: Vec<f64>,
@@ -13,11 +12,12 @@ pub struct CpuInfo {
 
 impl CpuInfo {
     pub fn new() -> Self {
-        let sys = System::new();
-
+        let mut sys = System::new();
+        
+        sys.refresh_cpu();
         let cpus_usage: Vec<f64> = vec![0.0; sys.cpus().len()];
-
-        let mut cpu_info = CpuInfo {
+        
+        CpuInfo {
             sys,
             cpu_count: cpus_usage.len(),
             cpus_usage,
@@ -25,9 +25,7 @@ impl CpuInfo {
             ram_total: 1,
             swap_used: 0,
             swap_total: 1,
-        };
-        cpu_info.update();
-        cpu_info
+        }
     }
 
     pub fn update(&mut self) {  

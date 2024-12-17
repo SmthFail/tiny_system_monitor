@@ -8,6 +8,8 @@ use std::io::{stdout, Write};
 
 use crossterm::event::{poll, read, Event, KeyEvent, KeyCode, KeyModifiers};
 use crossterm::{execute, cursor};
+use crossterm::cursor::MoveTo;
+use crossterm::style::Print;
 use crossterm::terminal::{
     self, disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen
 };
@@ -43,7 +45,7 @@ fn main() {
     );
 
 
-    let config = match args.len() - 1 {
+    let mut config = match args.len() - 1 {
         0 => AppConfig::new(String::new(), screen_w, screen_h),
         1 => match args[1].as_str() {
             "-h" => {
@@ -68,7 +70,7 @@ fn main() {
 
     let mut devices: Vec<Box<dyn Device>> = Vec::new();
     
-    for tile in config.tiles {
+    for tile in &config.tiles {
         if let Some(factory) = DEVICE_REGISTRY.get(tile.name.as_str()) {
            let device = (factory)(&tile);
            devices.push(device);
@@ -78,36 +80,7 @@ fn main() {
         }
     }
 
-    for device in devices {
-        device.show();
-    }
-
-    exit(1);
-
-    // start main loop    
     let mut stdout = stdout();
-
-    let mut ui = Ui::new(screen_w, screen_h);
-    ui.create_layout(
-        config.tiles[0].name.clone(),
-        LayoutBbox {
-            top: config.tiles[0].row,
-            left: config.tiles[0].col,
-            width: config.tiles[0].width,
-            height: config.tiles[0].height,
-        },
-        LayoutType::Cpu,
-    );
-    ui.create_layout(
-        config.tiles[1].name.clone(),
-        LayoutBbox {
-            top: config.tiles[1].row,
-            left: config.tiles[1].col,
-            width: config.tiles[1].width,
-            height: config.tiles[1].height,
-        },
-        LayoutType::Gpu,
-    );
 
     execute!(stdout, EnterAlternateScreen, cursor::Hide,).unwrap();
 
@@ -115,8 +88,15 @@ fn main() {
 
 
     loop {
-        ui.update_all(&config.tiles);
-
+        devices[0].update();
+        let data = devices[0].show();
+        for (ind, row) in data.iter().enumerate() {
+            execute!(
+                stdout, 
+                MoveTo(0, ind as u16),
+                Print(row)
+            );
+        }
         stdout.flush().unwrap();
         if poll(Duration::from_millis(500)).unwrap() {
             match read().unwrap() {
@@ -130,8 +110,6 @@ fn main() {
                 }
                 Event::Resize(width, height) => {
                     println!("Terminal resized");
-                    ui.width = width;
-                    ui.height = height;
                     config.update_grid(width, height);
                 },
                 _ => (),
