@@ -1,5 +1,4 @@
 use::std::env;
-use::std::process::exit;
 mod app_config;
 mod file_config;
 use crate::app_config::{AppConfig, DeviceTile};
@@ -7,9 +6,9 @@ use crate::app_config::{AppConfig, DeviceTile};
 use std::io::{stdout, Write};
 
 use crossterm::event::{poll, read, Event, KeyEvent, KeyCode, KeyModifiers};
-use crossterm::{execute, cursor};
-use crossterm::cursor::MoveTo;
-use crossterm::style::Print;
+use crossterm::{cursor, execute, queue};
+use crossterm::cursor::{MoveTo, MoveToRow};
+use crossterm::style::{Print, ResetColor, Color, SetForegroundColor};
 use crossterm::terminal::{
     self, disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen
 };
@@ -19,10 +18,6 @@ use std::time::Duration;
 mod cpu_info;
 mod gpu_info;
 mod ui;
-
-use crate::ui::LayoutBbox;
-use ui::{LayoutType, Ui};
-
 mod device_model;
 use device_model::{Device, DEVICE_REGISTRY};
 mod cpu_device;
@@ -40,11 +35,12 @@ fn print_usage_message() {
 fn main() {
     let args: Vec<String> = env::args().collect();
   
-    let (screen_w, screen_h) = terminal::size().expect(
+    let (mut screen_w, mut screen_h) = terminal::size().expect(
         "Can't get terminal size"
     );
 
-
+    // leave last line for information
+    screen_h -= 1;
     let mut config = match args.len() - 1 {
         0 => AppConfig::new(String::new(), screen_w, screen_h),
         1 => match args[1].as_str() {
@@ -72,7 +68,7 @@ fn main() {
     
     for tile in &config.tiles {
         if let Some(factory) = DEVICE_REGISTRY.get(tile.name.as_str()) {
-           let device = (factory)(&tile);
+           let device = (factory)(tile);
            devices.push(device);
         }
         else {
@@ -91,14 +87,13 @@ fn main() {
         devices[0].update();
         let data = devices[0].show();
         for (ind, row) in data.iter().enumerate() {
-            execute!(
-                stdout, 
+            queue!(
+                stdout,
                 MoveTo(0, ind as u16),
                 Print(row)
-            );
+            ).unwrap();
         }
-        stdout.flush().unwrap();
-        if poll(Duration::from_millis(500)).unwrap() {
+        if poll(Duration::from_millis(250)).unwrap() {
             match read().unwrap() {
                 Event::Key(KeyEvent {
                     code: KeyCode::Char('q'),
@@ -109,14 +104,32 @@ fn main() {
                     break;
                 }
                 Event::Resize(width, height) => {
-                    println!("Terminal resized");
+                    queue!(stdout, terminal::Clear(terminal::ClearType::All)).unwrap();
+                    
+                    for tile in &config.tiles {
+                        for device in &mut devices {
+                            if device.get_name() == tile.name {
+                                device.resize(tile.width, tile.height);
+                            }
+                        }
+                    }
+
+                    screen_w = width;
+                    screen_h = height;
                     config.update_grid(width, height);
                 },
                 _ => (),
             }
         }
+        // TODO
+        queue!(
+            stdout, 
+            MoveToRow(screen_h), 
+            SetForegroundColor(Color::Green),
+            Print("q: exit".to_string()),
+            ResetColor).unwrap();
         stdout.flush().unwrap();
-        std::thread::sleep(std::time::Duration::from_millis(500));
+        std::thread::sleep(std::time::Duration::from_millis(250));
         
     }
     disable_raw_mode().unwrap();

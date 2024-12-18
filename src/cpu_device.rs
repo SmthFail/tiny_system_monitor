@@ -21,14 +21,8 @@ pub struct CpuDevice {
 
 impl Device for CpuDevice {
     fn new(device_tile: &DeviceTile) -> Self {
-        let mut data_array: Vec<String> = vec!["_".repeat(device_tile.width.into()); device_tile.height.into()];
-        let header: String = {
-            let hs = "CPU_HEADER".to_string();
-            let empty_space = device_tile.width as usize - hs.len();
-            let line = hs.clone() +  &"|".repeat(empty_space);
-            line
-        };
-
+        let mut data_array: Vec<String> = vec!["".repeat(device_tile.width.into()); device_tile.height.into()];
+        let header = "CPU:".to_string();
         data_array[0] = header;
 
         CpuDevice{
@@ -42,13 +36,18 @@ impl Device for CpuDevice {
         }
     }
 
-    fn resize(&mut self) {
-        // TODO print_data must be resized here
+    fn resize(&mut self, width: u16, height: u16) {
+        self.width = width;
+        self.height = height;
     }
 
     fn update(&mut self) {
         self.cpu_info.update();
     }    
+
+    fn get_name(&self) -> String {
+        self.name.clone()
+    }
 
     fn show(&mut self) -> &Vec<String> {
         for i in 0..self.cpu_info.cpu_count {
@@ -59,8 +58,24 @@ impl Device for CpuDevice {
                 cpu_usage / 100.0,
                 format!("{:.2}%]", cpu_usage),
             );
-            self.print_data[i + 2] = cpu_bar;
+            self.print_data[i + 1] = cpu_bar;
         }
+
+        let ram_usage = self.cpu_info.get_ram_usage();
+        self.print_data[self.cpu_info.cpu_count + 2] = calculate_progress_bar(
+            self.width,
+            String::from("RAM["),
+            ram_usage.0 as f64 / ram_usage.1 as f64, 
+            format!("{}/{}Mb]", ram_usage.0, ram_usage.1)
+        );         
+
+        let swap_usage = self.cpu_info.get_swap_usage();
+        self.print_data[self.cpu_info.cpu_count + 3] = calculate_progress_bar(
+            self.width, 
+            String::from("SWP["),
+            swap_usage.0 as f64 / swap_usage.1 as f64, 
+            format!("{}/{}Mb]", swap_usage.0, swap_usage.1)
+        );
  
         &self.print_data
     }

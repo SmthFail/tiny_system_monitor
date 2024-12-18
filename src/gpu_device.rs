@@ -25,8 +25,12 @@ impl Device for GpuDevice {
             print_data: vec!["0".to_string(); device_tile.width.into()]
         }
     }
-    fn resize(&mut self) {
+    fn resize(&mut self, width: u16, height: u16) {
 
+    }
+
+    fn get_name(&self) -> String {
+        self.name.clone()
     }
 
     fn update(&mut self) {
