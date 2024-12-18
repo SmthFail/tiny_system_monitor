@@ -9,6 +9,7 @@ pub trait Device {
     fn update(&mut self);
     fn show(&mut self) -> &Vec<String>;
     fn get_name(&self) -> String;
+    fn get_position(&self) -> (u16, u16);
 }
 
 type DeviceFactory = HashMap<&'static str, fn(&DeviceTile) -> Box<dyn Device>>; 

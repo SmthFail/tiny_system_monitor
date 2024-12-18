@@ -50,7 +50,7 @@ impl GpuAll {
     }
 }
 
-struct GpuDeviceInfo {
+pub struct GpuDeviceInfo {
     gpu_info: String,
     memory_used: f64,
     memory_total: f64,
@@ -59,7 +59,7 @@ struct GpuDeviceInfo {
 }
 
 impl GpuDeviceInfo {
-    fn new(device: Device) -> Self {
+    pub fn new(device: Device) -> Self {
         let name: String = device.name().expect("Can't read GPU device name");
         let capability = match device.cuda_compute_capability() {
             Ok(compute_capability) => {
@@ -79,7 +79,7 @@ impl GpuDeviceInfo {
         }
     }
 
-    fn update(&mut self, device: Device) {
+    pub fn update(&mut self, device: Device) {
         self.temperature = match device.temperature(TemperatureSensor::Gpu) {
             Ok(temperature) => temperature,
             Err(_err) => panic!("Can't read temperature"),

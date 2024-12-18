@@ -62,7 +62,6 @@ fn main() {
             return;
         }
     };
-    println!("Config: {} loaded!", config.name);
 
     let mut devices: Vec<Box<dyn Device>> = Vec::new();
     
@@ -84,15 +83,21 @@ fn main() {
 
 
     loop {
-        devices[0].update();
-        let data = devices[0].show();
-        for (ind, row) in data.iter().enumerate() {
-            queue!(
-                stdout,
-                MoveTo(0, ind as u16),
-                Print(row)
-            ).unwrap();
-        }
+        for device in &mut devices {
+            device.update();
+        } 
+
+        for device in &mut devices {
+            let position = device.get_position();
+            for (ind, row) in device.show().iter().enumerate() {
+                queue!(
+                    stdout,
+                    MoveTo(position.1, ind as u16 + position.0),
+                    Print(row)
+                ).unwrap(); 
+            }
+        } 
+
         if poll(Duration::from_millis(250)).unwrap() {
             match read().unwrap() {
                 Event::Key(KeyEvent {
@@ -121,12 +126,12 @@ fn main() {
                 _ => (),
             }
         }
-        // TODO
+
         queue!(
             stdout, 
-            MoveToRow(screen_h), 
+            MoveTo(0, screen_h), 
             SetForegroundColor(Color::Green),
-            Print("q: exit".to_string()),
+            Print(format!("q: exit, config: {}", config.name)),
             ResetColor).unwrap();
         stdout.flush().unwrap();
         std::thread::sleep(std::time::Duration::from_millis(250));

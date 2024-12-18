@@ -41,6 +41,10 @@ impl Device for CpuDevice {
         self.height = height;
     }
 
+    fn get_position(&self) -> (u16, u16) {
+        (self.row, self.col)
+    }
+
     fn update(&mut self) {
         self.cpu_info.update();
     }    
