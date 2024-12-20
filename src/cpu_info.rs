@@ -1,4 +1,4 @@
-use sysinfo::{CpuExt, System, SystemExt};
+use sysinfo::System;
 
 pub struct CpuInfo {
     sys: System,
@@ -14,7 +14,7 @@ impl CpuInfo {
     pub fn new() -> Self {
         let mut sys = System::new();
         
-        sys.refresh_cpu();
+        sys.refresh_cpu_all();
         let cpus_usage: Vec<f64> = vec![0.0; sys.cpus().len()];
         
         CpuInfo {
@@ -34,7 +34,7 @@ impl CpuInfo {
     }
     
     fn update_cpu_usage(&mut self) {
-        self.sys.refresh_cpu();
+        self.sys.refresh_cpu_all();
         for (ind, cpu) in self.sys.cpus().iter().enumerate() {
             self.cpus_usage[ind] = cpu.cpu_usage() as f64;
         }
