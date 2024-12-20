@@ -56,7 +56,7 @@ fn main() {
  
 
         },
-                  _ => { 
+        _ => { 
             eprintln!("ERROR: Invalid number of arguments");
             print_usage_message();
             return;
@@ -119,8 +119,6 @@ fn main() {
                             }
                         }
                     }
-
-
                 },
                 _ => (),
             }
@@ -137,5 +135,4 @@ fn main() {
         
     }
     disable_raw_mode().unwrap();
-
 }

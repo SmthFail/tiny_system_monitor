@@ -17,7 +17,8 @@ pub struct CpuDevice {
     height: u16,
     cpu_info: CpuInfo,
     symbol: String,
-   pub  print_data: Vec<String>
+   pub  print_data: Vec<String>,
+    padding: u16
 }
 
 impl Device for CpuDevice {
@@ -25,24 +26,25 @@ impl Device for CpuDevice {
         let mut data_array: Vec<String> = vec!["".repeat(device_tile.width.into()); device_tile.height.into()];
         let header = "CPU:".to_string();
         data_array[0] = header;
-
+        let padding = 1;
         CpuDevice{
             name: device_tile.name.clone(),
-            width: device_tile.width,
-            height: device_tile.height,
-            row: device_tile.row,
-            col: device_tile.col,
+            width: device_tile.width - 2 * padding,
+            height: device_tile.height - 2 * padding,
+            row: device_tile.row + padding,
+            col: device_tile.col + padding,
             cpu_info: CpuInfo::new(),
             print_data: data_array,
-            symbol: device_tile.symbol.clone()
+            symbol: device_tile.symbol.clone(),
+            padding: 1
         }
     }
 
     fn resize(&mut self, tile: &DeviceTile) {
-        self.width = tile.width;
-        self.height = tile.height;
-        self.col = tile.col;
-        self.row = tile.row;
+        self.width = tile.width - 2 * self.padding;
+        self.height = tile.height - 2 * self.padding;
+        self.col = tile.col + self.padding;
+        self.row = tile.row + self.padding;
     }
 
     fn get_position(&self) -> (u16, u16) {
@@ -69,7 +71,7 @@ impl Device for CpuDevice {
                 format!("{:3}[", i).as_str(),
                 cpu_usage / 100.0,
                 format!("{:>5.1}%]", cpu_usage).as_str(),
-                &mut self.symbol
+                &self.symbol
             );
             self.print_data[i + 1] = cpu_bar;
         }
@@ -80,7 +82,7 @@ impl Device for CpuDevice {
             "RAM[",
             ram_usage.0 as f64 / ram_usage.1 as f64, 
             format!("{}/{}Mb]", ram_usage.0, ram_usage.1).as_str(),
-            &mut self.symbol
+            &self.symbol
         );         
 
         let swap_usage = self.cpu_info.get_swap_usage();
@@ -89,7 +91,7 @@ impl Device for CpuDevice {
             "SWP[",
             swap_usage.0 as f64 / swap_usage.1 as f64, 
             format!("{}/{}Mb]", swap_usage.0, swap_usage.1).as_str(),
-            &mut self.symbol
+            &self.symbol
         );
  
         &self.print_data

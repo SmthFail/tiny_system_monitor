@@ -17,7 +17,8 @@ struct GpuDevice {
     print_data: Vec<String>,
     nvml: Nvml,
     devices: Vec<GpuDeviceInfo>,
-    symbol: String
+    symbol: String,
+    padding: u16
 }
 
 impl Device for GpuDevice {
@@ -29,30 +30,30 @@ impl Device for GpuDevice {
         let nvml = Nvml::init().unwrap();
         let device_count = nvml.device_count().unwrap();
 
-
         let mut devices: Vec<GpuDeviceInfo> = Vec::new();
         for i in 0..device_count {
             let device = nvml.device_by_index(i).unwrap();
             devices.push(GpuDeviceInfo::new(device))
         }
-
+        let padding = 1;
         GpuDevice {
             name: device_tile.name.clone(),
-            width: device_tile.width,
-            height: device_tile.height,
-            col: device_tile.col,
-            row: device_tile.row,
+            width: device_tile.width - 2 * padding,
+            height: device_tile.height - 2 * padding,
+            col: device_tile.col + padding,
+            row: device_tile.row + padding,
             print_data,
             nvml,
             devices,
-            symbol: device_tile.symbol.clone()
+            symbol: device_tile.symbol.clone(),
+            padding
         }
     }
     fn resize(&mut self, tile: &DeviceTile) {
-        self.width = tile.width;
-        self.height = tile.height;
-        self.col = tile.col;
-        self.row = tile.row;
+        self.width = tile.width - 2 * self.padding;
+        self.height = tile.height - 2 * self.padding;
+        self.col = tile.col + self.padding;
+        self.row = tile.row + self.padding;
     }
 
     fn get_name(&self) -> String {
