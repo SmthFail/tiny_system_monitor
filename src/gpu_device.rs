@@ -16,7 +16,8 @@ struct GpuDevice {
     height: u16,
     print_data: Vec<String>,
     nvml: Nvml,
-    devices: Vec<GpuDeviceInfo>
+    devices: Vec<GpuDeviceInfo>,
+    symbol: String
 }
 
 impl Device for GpuDevice {
@@ -43,7 +44,8 @@ impl Device for GpuDevice {
             row: device_tile.row,
             print_data,
             nvml,
-            devices
+            devices,
+            symbol: device_tile.symbol.clone()
         }
     }
     fn resize(&mut self, tile: &DeviceTile) {
@@ -84,13 +86,15 @@ impl Device for GpuDevice {
                 self.width,
                 String::from("MEM["),
                 device.memory_used / device.memory_total,
-                format!("{}/{}MB]", device.memory_used, device.memory_total)                
+                format!("{}/{}MB]", device.memory_used, device.memory_total),
+                &mut self.symbol
             );
             self.print_data[curr_pos + 3] = calculate_progress_bar(
                 self.width, 
                 String::from("GPU["), 
                 device.utilization_rates / 100.0, 
-                format!("{}%]", device.utilization_rates)
+                format!("{}%]", device.utilization_rates),
+                &mut self.symbol
             )
         }
         &self.print_data

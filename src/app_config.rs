@@ -7,7 +7,8 @@ pub struct DeviceTile {
    pub row: u16,
    pub col: u16,
    pub width: u16,
-   pub height: u16
+   pub height: u16,
+   pub symbol: String
 }
 
 #[derive(Debug)]
@@ -22,7 +23,7 @@ pub struct AppConfig {
 impl AppConfig {
     pub fn new(config_name: String, screen_width: u16, screen_height: u16) -> Self {
         let file_config = FileConfig::new(config_name);
-        let device_tiles = Self::get_device_tiles(&file_config.devices, screen_width, screen_height);
+        let device_tiles = Self::get_device_tiles(&file_config.devices, screen_width, screen_height, &file_config.symbol);
         AppConfig{
              name: file_config.name,
              symbol: file_config.symbol,
@@ -32,10 +33,10 @@ impl AppConfig {
     }
 
     pub fn update_grid(&mut self, new_w: u16, new_h: u16) {
-        self.tiles = Self::get_device_tiles(&self.devices, new_w, new_h);
+        self.tiles = Self::get_device_tiles(&self.devices, new_w, new_h, &self.symbol);
     }
 
-    fn get_device_tiles(devices: &Vec<FileDevice>, new_w: u16, new_h: u16) -> Vec<DeviceTile> {
+    fn get_device_tiles(devices: &Vec<FileDevice>, new_w: u16, new_h: u16, symbol: &String) -> Vec<DeviceTile> {
         let mut tiles: Vec<DeviceTile> = Vec::new();
         
         if Self::check_device_tiles_overlap(devices) {
@@ -50,7 +51,8 @@ impl AppConfig {
                     row: (device.row as f32 * row_scale) as u16,
                     col: (device.col as f32 * col_scale) as u16,
                     width: (device.width as f32 * col_scale) as u16,
-                    height: (device.height as f32 * row_scale) as u16
+                    height: (device.height as f32 * row_scale) as u16,
+                    symbol: symbol.clone() 
                 }
             )
         }
