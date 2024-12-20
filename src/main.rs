@@ -1,13 +1,13 @@
 use::std::env;
 mod app_config;
 mod file_config;
-use crate::app_config::{AppConfig, DeviceTile};
+use crate::app_config::AppConfig;
 
 use std::io::{stdout, Write};
 
 use crossterm::event::{poll, read, Event, KeyEvent, KeyCode, KeyModifiers};
 use crossterm::{cursor, execute, queue};
-use crossterm::cursor::{MoveTo, MoveToRow};
+use crossterm::cursor::MoveTo;
 use crossterm::style::{Print, ResetColor, Color, SetForegroundColor};
 use crossterm::terminal::{
     self, disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen
@@ -85,9 +85,6 @@ fn main() {
     loop {
         for device in &mut devices {
             device.update();
-        } 
-
-        for device in &mut devices {
             let position = device.get_position();
             for (ind, row) in device.show().iter().enumerate() {
                 queue!(

@@ -1,5 +1,3 @@
-use std::fmt::write;
-
 use super::device_model::Device;
 use super::app_config::DeviceTile;
 use super::cpu_info::CpuInfo;
@@ -68,9 +66,9 @@ impl Device for CpuDevice {
             let cpu_usage = self.cpu_info.get_cpu_usage(i); 
             let cpu_bar = calculate_progress_bar(
                 self.width,
-                format!("{:3}[", i),
+                format!("{:3}[", i).as_str(),
                 cpu_usage / 100.0,
-                format!("{:>5.1}%]", cpu_usage),
+                format!("{:>5.1}%]", cpu_usage).as_str(),
                 &mut self.symbol
             );
             self.print_data[i + 1] = cpu_bar;
@@ -79,18 +77,18 @@ impl Device for CpuDevice {
         let ram_usage = self.cpu_info.get_ram_usage();
         self.print_data[self.cpu_info.cpu_count + 2] = calculate_progress_bar(
             self.width,
-            String::from("RAM["),
+            "RAM[",
             ram_usage.0 as f64 / ram_usage.1 as f64, 
-            format!("{}/{}Mb]", ram_usage.0, ram_usage.1),
+            format!("{}/{}Mb]", ram_usage.0, ram_usage.1).as_str(),
             &mut self.symbol
         );         
 
         let swap_usage = self.cpu_info.get_swap_usage();
         self.print_data[self.cpu_info.cpu_count + 3] = calculate_progress_bar(
             self.width, 
-            String::from("SWP["),
+            "SWP[",
             swap_usage.0 as f64 / swap_usage.1 as f64, 
-            format!("{}/{}Mb]", swap_usage.0, swap_usage.1),
+            format!("{}/{}Mb]", swap_usage.0, swap_usage.1).as_str(),
             &mut self.symbol
         );
  

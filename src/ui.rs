@@ -1,68 +1,43 @@
-use crossterm::cursor::MoveTo;
-use crossterm::style::{Color, Print, ResetColor, SetForegroundColor, Stylize};
-use crossterm::{execute, terminal};
-
-use std::io::{stdout, Stdout};
-
-use crate::gpu_info;
-use gpu_info::GpuAll;
-
-use crate::cpu_info;
-use cpu_info::CpuInfo;
-
-use crate::DeviceTile;
-
+use crossterm::style::Stylize;
 extern crate unicode_width;
 use unicode_width::UnicodeWidthStr;
 
 
 pub fn calculate_progress_bar(
     width: u16,
-    lead: String,
+    lead: &str,
     progress_data: f64,
-    trail: String,
-    symbol: &mut String
+    trail: &str,
+    symbol: &str 
 ) -> String {
-    let mut progress_string = lead.to_owned();
-    let mut symbol = symbol;//String::from("|"); //  🐱  TODO pass symbol from app config
-    
-    let symbol_width: usize = symbol.width();
-
-    
-    let progress_bar_width = width  
-        - lead.as_str().width() as u16 
-        - trail.as_str().width() as u16;
-        
-    
-    //progress_bar_width = progress_bar_width / symbol_width as u16;
-    
-    if symbol == "|" {
-        if (0.0..0.5).contains(&progress_data) {
-           symbol.clone().green().to_string();
-        } else if (0.5..=0.75).contains(&progress_data) {
-           symbol.clone().yellow().to_string();
-        } else {
-           symbol.clone().red().to_string();
-        }
-    } 
-
-    
-    let load_width = (progress_bar_width as f64 * progress_data) as usize;
+    let mut progress_string = lead.to_string();
+    let progress_bar_width = width
+        .saturating_sub(lead.width() as u16)
+        .saturating_sub(trail.width() as u16);
+ 
+    let colored_symbol = if (0.0..0.5).contains(&progress_data) {
+        symbol.green().to_string()
+    } else if (0.5..=0.75).contains(&progress_data) {
+        symbol.yellow().to_string()
+    } else {
+        symbol.red().to_string()
+    };
    
-    
+    let symbol_width: usize = symbol.width();
+    let load_width = (progress_bar_width as f64 * progress_data).floor() as usize;
+    let full_width = load_width / symbol_width;
+    let remaining_width = progress_bar_width as usize - full_width * symbol_width;
 
-    for _ in 0..load_width.div_ceil(symbol_width) {
-        progress_string = progress_string + &symbol;
+
+    for _ in 0..full_width {
+        progress_string.push_str(&colored_symbol);
     }
     
-    
-    
-    if progress_bar_width as usize - load_width != 0 {
-    	let empty_width = progress_bar_width as usize - load_width.div_ceil(symbol_width) * symbol_width - 1;
-    	progress_string += &" ".repeat(empty_width);
-    }; 
-        
-    progress_string += &trail;
+    if remaining_width > 0 {
+        progress_string.push_str(&" ".repeat(remaining_width));
+    }
+       
+    progress_string.push_str(trail);
     progress_string
 }
 
