@@ -79,6 +79,12 @@ impl Device for GpuDevice {
                 String::from("MEM["),
                 device.memory_used / device.memory_total,
                 format!("{}/{}MB]", device.memory_used, device.memory_total)                
+            );
+            self.print_data[curr_pos + 3] = calculate_progress_bar(
+                self.width, 
+                String::from("GPU["), 
+                device.utilization_rates / 100.0, 
+                format!("{}%]", device.utilization_rates)
             )
         }
         &self.print_data
