@@ -5,11 +5,12 @@ use super::app_config::DeviceTile;
 
 pub trait Device {
     fn new(device_tile: &DeviceTile) -> Self where Self: Sized;
-    fn resize(&mut self, width: u16, height: u16);
+    fn resize(&mut self, device_tile: &DeviceTile);
     fn update(&mut self);
     fn show(&mut self) -> &Vec<String>;
     fn get_name(&self) -> String;
     fn get_position(&self) -> (u16, u16);
+    fn get_size(&self) -> (u16, u16);
 }
 
 type DeviceFactory = HashMap<&'static str, fn(&DeviceTile) -> Box<dyn Device>>; 

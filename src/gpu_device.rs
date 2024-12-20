@@ -12,7 +12,7 @@ struct GpuDevice {
     name: String,
     col: u16,
     row: u16,
-    width: u16,
+    pub width: u16,
     height: u16,
     print_data: Vec<String>,
     nvml: Nvml,
@@ -46,9 +46,11 @@ impl Device for GpuDevice {
             devices
         }
     }
-    fn resize(&mut self, width: u16, height: u16) {
-        self.width = width;
-        self.height = height;
+    fn resize(&mut self, tile: &DeviceTile) {
+        self.width = tile.width;
+        self.height = tile.height;
+        self.col = tile.col;
+        self.row = tile.row;
     }
 
     fn get_name(&self) -> String {
@@ -57,6 +59,10 @@ impl Device for GpuDevice {
 
     fn get_position(&self) -> (u16, u16) {
         (self.row, self.col)
+    }
+
+    fn get_size(&self) -> (u16, u16) {
+        (self.width, self.height)
     }
 
     fn update(&mut self) {

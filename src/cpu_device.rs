@@ -13,7 +13,7 @@ pub struct CpuDevice {
     name: String,
     row: u16, 
     col: u16,
-    width: u16,
+    pub width: u16,
     height: u16,
     cpu_info: CpuInfo,
    pub  print_data: Vec<String>
@@ -36,13 +36,19 @@ impl Device for CpuDevice {
         }
     }
 
-    fn resize(&mut self, width: u16, height: u16) {
-        self.width = width;
-        self.height = height;
+    fn resize(&mut self, tile: &DeviceTile) {
+        self.width = tile.width;
+        self.height = tile.height;
+        self.col = tile.col;
+        self.row = tile.row;
     }
 
     fn get_position(&self) -> (u16, u16) {
         (self.row, self.col)
+    }
+
+    fn get_size(&self) -> (u16, u16) {
+        (self.width, self.height)
     }
 
     fn update(&mut self) {

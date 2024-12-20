@@ -111,17 +111,19 @@ fn main() {
                 Event::Resize(width, height) => {
                     queue!(stdout, terminal::Clear(terminal::ClearType::All)).unwrap();
                     
+                    screen_w = width;
+                    screen_h = height;
+                    config.update_grid(width, height);
+
                     for tile in &config.tiles {
                         for device in &mut devices {
                             if device.get_name() == tile.name {
-                                device.resize(tile.width, tile.height);
+                                device.resize(tile);
                             }
                         }
                     }
 
-                    screen_w = width;
-                    screen_h = height;
-                    config.update_grid(width, height);
+
                 },
                 _ => (),
             }
