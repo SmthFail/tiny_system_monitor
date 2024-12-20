@@ -51,11 +51,11 @@ impl GpuAll {
 }
 
 pub struct GpuDeviceInfo {
-    gpu_info: String,
-    memory_used: f64,
-    memory_total: f64,
-    utilization_rates: f64,
-    temperature: u32,
+    pub gpu_info: String,
+    pub memory_used: f64,
+    pub memory_total: f64,
+    pub utilization_rates: f64,
+    pub temperature: u32,
 }
 
 impl GpuDeviceInfo {
