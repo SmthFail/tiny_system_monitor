@@ -1,54 +1,6 @@
 use nvml_wrapper::enum_wrappers::device::TemperatureSensor;
-use nvml_wrapper::{Device, Nvml};
+use nvml_wrapper::Device;
 
-pub struct GpuAll {
-    nvml: Nvml,
-    gpu_devices: Vec<GpuDeviceInfo>,
-    pub device_count: u32,
-}
-
-impl GpuAll {
-    pub fn new() -> Self {
-        let nvml = Nvml::init().unwrap();
-        let device_count = nvml.device_count().unwrap();
-        let mut gpu_devices: Vec<GpuDeviceInfo> = Vec::new();
-
-        for i in 0..device_count {
-            let device = nvml.device_by_index(i).unwrap();
-            gpu_devices.push(GpuDeviceInfo::new(device))
-        }
-        GpuAll {
-            nvml,
-            gpu_devices,
-            device_count,
-        }
-    }
-    pub fn get_info(&self, device_index: u32) -> String {
-        format!(
-            "{}, T: {:>3}°C",
-            self.gpu_devices[device_index as usize].gpu_info,
-            self.gpu_devices[device_index as usize].temperature,
-        )
-    }
-
-    pub fn get_memory_info(&self, device_index: u32) -> (f64, f64) {
-        (
-            self.gpu_devices[device_index as usize].memory_used,
-            self.gpu_devices[device_index as usize].memory_total,
-        )
-    }
-
-    pub fn get_utilization_rate_info(&self, device_index: u32) -> f64 {
-        self.gpu_devices[device_index as usize].utilization_rates
-    }
-
-    pub fn update(&mut self) {
-        for ind in 0..self.device_count {
-            let device = self.nvml.device_by_index(ind).unwrap();
-            let _ = &mut self.gpu_devices[ind as usize].update(device);
-        }
-    }
-}
 
 pub struct GpuDeviceInfo {
     pub gpu_info: String,

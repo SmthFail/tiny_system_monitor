@@ -1,6 +1,6 @@
 use super::device_model::Device;
 use super::app_config::DeviceTile;
-use nvml_wrapper::{Nvml};
+use nvml_wrapper::Nvml;
 use super::gpu_info::GpuDeviceInfo;
 use crate::ui::calculate_progress_bar;
 
@@ -78,11 +78,25 @@ impl Device for GpuDevice {
     fn show(&mut self) -> &Vec<String> {
         for (i, device) in self.devices.iter().enumerate() {
             let curr_pos = i + i * 3;
-            self.print_data[curr_pos + 1] = format!(
+            let mut device_info = format!(
                 "{}, T: {:>3}°C", 
                 device.gpu_info,
                 device.temperature
             );
+
+            if device_info.len() > self.width.into() {
+                device_info = format!(
+                    "{}, T:  {:>3}°C",
+                    i, 
+                    device.temperature
+                )
+            }
+
+            if device_info.len() > self.width.into() {
+                device_info = device_info[..self.width as usize].to_string()
+            }
+
+            self.print_data[curr_pos + 1] = device_info; 
             self.print_data[curr_pos + 2] = calculate_progress_bar(
                 self.width,
                 "MEM[",
