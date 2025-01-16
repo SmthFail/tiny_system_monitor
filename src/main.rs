@@ -23,6 +23,8 @@ use device_model::{Device, DEVICE_REGISTRY};
 mod cpu_device;
 mod gpu_device;
 
+mod disk_analyze;
+
 fn print_usage_message() {
     println!("Usage: ");
     println!("tsm  [Options]");
