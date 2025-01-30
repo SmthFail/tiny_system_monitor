@@ -1,6 +1,6 @@
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
-use super::{cpu_device, gpu_device, disk_analyze};
+use super::{cpu_device, gpu_device};
 use super::app_config::DeviceTile;
 
 pub trait Device {
@@ -25,10 +25,6 @@ pub static DEVICE_REGISTRY: Lazy<DeviceFactory> =
         registry.insert(
             "gpu",
             gpu_device::create_device
-        );
-        registry.insert(
-            "disk",
-            disk_analyze::create_device
         );
     registry
 });

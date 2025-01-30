@@ -12,6 +12,7 @@ use crossterm::style::{Print, ResetColor, Color, SetForegroundColor};
 use crossterm::terminal::{
     self, disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen
 };
+use text_widget::TextWidget;
 
 use std::time::Duration;
 
@@ -23,7 +24,18 @@ use device_model::{Device, DEVICE_REGISTRY};
 mod cpu_device;
 mod gpu_device;
 
-mod disk_analyze;
+mod widget;
+use widget::Rect;
+
+mod buffer;
+use buffer::{Buffer};
+
+mod text_widget;
+
+use crate::widget::Widget;
+
+mod tile_widget;
+use tile_widget::{Tile, Layout};
 
 fn print_usage_message() {
     println!("Usage: ");
@@ -32,6 +44,58 @@ fn print_usage_message() {
     println!("  <config_name>   Read config with the given name. Config must be placed in ~/.config/tsm/<config_name>.json");
     println!("  -h, --help      Print help message")
 }
+
+
+pub fn flush_buffer_to_crossterm(buffer: &Buffer) -> crossterm::Result<()> {
+    let mut stdout = stdout();
+
+    // Для примера — просто бежим по всем ячейкам и выводим символы.
+    // Можно оптимизировать, обновляя только те ячейки, что изменились с прошлого кадра.
+
+    let mut last_fg: Option<Color> = None;
+    let mut last_bg: Option<Color> = None;
+
+    for y in 0..buffer.height {
+        for x in 0..buffer.width {
+            let idx = (y as usize) * (buffer.width as usize) + (x as usize);
+            let cell = &buffer.cells[idx];
+            
+            // Двигаем курсор в (x, y)
+            queue!(stdout, MoveTo(x, y))?;
+            /*
+            // Устанавливаем цвет перед тем, как вывести символ (если отличается от предыдущего)
+            if cell.fg != last_fg {
+                if let Some(fg_color) = &cell.fg {
+                    queue!(stdout, SetForegroundColor(to_crossterm_color(fg_color)))?;
+                } else {
+                    // Сброс цвета
+                    queue!(stdout, SetForegroundColor(CtColor::Reset))?;
+                }
+                last_fg = cell.fg.clone();
+            }
+            if cell.bg != last_bg {
+                if let Some(bg_color) = &cell.bg {
+                    queue!(stdout, SetBackgroundColor(to_crossterm_color(bg_color)))?;
+                } else {
+                    // Сброс фона
+                    queue!(stdout, SetBackgroundColor(CtColor::Reset))?;
+                }
+                last_bg = cell.bg.clone();
+            }
+            */
+            // Выводим символ
+            queue!(stdout, Print(cell.symbol))?;
+        }
+    }
+
+    // Сбрасываем цвета в конце (по желанию)
+    // queue!(stdout, SetForegroundColor(CtColor::Reset))?;
+    // queue!(stdout, SetBackgroundColor(CtColor::Reset))?;
+
+    stdout.flush()?;
+    Ok(())
+}
+
 
 
 fn main() {
@@ -64,7 +128,7 @@ fn main() {
             return;
         }
     };
-
+    /*
     let mut devices: Vec<Box<dyn Device>> = Vec::new();
     
     for tile in &config.tiles {
@@ -76,15 +140,24 @@ fn main() {
             println!("Device {} not found in allowed list!", tile.name);
         }
     }
-
+*/
     let mut stdout = stdout();
+    let mut buffer = Buffer::new(screen_w, screen_h);
+    
+    // for test
+    let caption = TextWidget::new("This is own capture!");
 
+    let mut tile = Tile::new(screen_w, screen_h, Layout::Vertical);
+    tile.add_child(Box::new(TextWidget::new("First")));
+    tile.add_child(Box::new(TextWidget::new("Second")));
+    
     execute!(stdout, EnterAlternateScreen, cursor::Hide,).unwrap();
 
     enable_raw_mode().unwrap();
 
 
     loop {
+        /*
         for device in &mut devices {
             device.update();
             let position = device.get_position();
@@ -96,6 +169,22 @@ fn main() {
                 ).unwrap(); 
             }
         } 
+        */
+        caption.render(&mut buffer, Rect{
+            x: 0, y: 0, width: screen_w, height: 1,
+        });
+
+        tile.render(
+            &mut buffer,
+            Rect {
+                x: 0,
+                y: 4,
+                width: screen_w,
+                height: screen_h - 4
+            }
+        );
+
+        let _ = flush_buffer_to_crossterm(&buffer);
 
         if poll(Duration::from_millis(250)).unwrap() {
             match read().unwrap() {
@@ -109,23 +198,19 @@ fn main() {
                 }
                 Event::Resize(width, height) => {
                     queue!(stdout, terminal::Clear(terminal::ClearType::All)).unwrap();
-                    
+
                     screen_w = width;
                     screen_h = height;
-                    config.update_grid(width, height);
-
-                    for tile in &config.tiles {
-                        for device in &mut devices {
-                            if device.get_name() == tile.name {
-                                device.resize(tile);
-                            }
-                        }
-                    }
+                    
+                    buffer = Buffer::new(width, height);
+                    tile.width = width;
+                    tile.height = height - 2;
+                    
                 },
                 _ => (),
             }
         }
-
+        /*
         queue!(
             stdout, 
             MoveTo(0, screen_h), 
@@ -133,7 +218,8 @@ fn main() {
             Print(format!("q: exit, config: {}", config.name)),
             ResetColor).unwrap();
         stdout.flush().unwrap();
-        std::thread::sleep(std::time::Duration::from_millis(250));
+        */
+                std::thread::sleep(std::time::Duration::from_millis(250));
         
     }
     disable_raw_mode().unwrap();
