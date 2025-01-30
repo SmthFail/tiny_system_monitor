@@ -37,24 +37,30 @@ impl Widget for Tile {
        let y1 = area.y;
        let x2 = x1 + area.width.saturating_sub(1);
        let y2 = y1 + area.height.saturating_sub(1);
-
+       
+       //draw corners
+       buff.set_cell(x1, y1, Cell::new('┌'));
+       buff.set_cell(x2, y1, Cell::new('┐'));
+       buff.set_cell(x1, y2, Cell::new('└'));
+       buff.set_cell(x2, y2, Cell::new('┘'));
+       
        // top and bottom border
-       for x in x1..=x2 {
+       for x in (x1 + 1)..x2 {
            if y1 < buff.height {
-               buff.set_cell(x, y1, Cell::new('#'));
+               buff.set_cell(x, y1, Cell::new('─'));
            }
            if y2 < buff.height && y2 > y1 {
-               buff.set_cell(x, y2, Cell::new('#'));
+               buff.set_cell(x, y2, Cell::new('─'));
            }
        }
 
        // left and right border
-       for y in y1..=y2 {
+       for y in (y1 + 1)..y2 {
             if x1 < buff.width {
-                buff.set_cell(x1, y, Cell::new('#'));
+                buff.set_cell(x1, y, Cell::new('│'));
             }
             if x2 < buff.width && x2 > x1 {
-                buff.set_cell(x2, y, Cell::new('#'));
+                buff.set_cell(x2, y, Cell::new('│'));
             }
        }
 
