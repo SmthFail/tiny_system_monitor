@@ -12,6 +12,7 @@ use crossterm::style::{Print, ResetColor, Color, SetForegroundColor};
 use crossterm::terminal::{
     self, disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen
 };
+use progress_widget::ProgressBar;
 use text_widget::TextWidget;
 
 use std::time::Duration;
@@ -31,7 +32,7 @@ mod buffer;
 use buffer::{Buffer};
 
 mod text_widget;
-
+mod progress_widget;
 use crate::widget::Widget;
 
 mod tile_widget;
@@ -150,12 +151,13 @@ fn main() {
     let mut tile = Tile::new(screen_w, screen_h, Layout::Vertical);
     tile.add_child(Box::new(TextWidget::new("First")));
     tile.add_child(Box::new(TextWidget::new("Second")));
+    tile.add_child(Box::new(ProgressBar::new("Ram", "Mb")));
     
     execute!(stdout, EnterAlternateScreen, cursor::Hide,).unwrap();
 
     enable_raw_mode().unwrap();
 
-
+    tile.update();
     loop {
         /*
         for device in &mut devices {
@@ -204,7 +206,7 @@ fn main() {
                     
                     buffer = Buffer::new(width, height);
                     tile.width = width;
-                    tile.height = height - 2;
+                    tile.height = height - 4;
                     
                 },
                 _ => (),

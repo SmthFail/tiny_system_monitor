@@ -1,5 +1,3 @@
-use crate::widget;
-
 use super::widget::Widget;
 use super::buffer::{Buffer, Cell};
 use super::widget::Rect;
@@ -155,6 +153,8 @@ impl Widget for Tile {
     }
 
     fn update(&mut self) {
-
+        for child in &mut self.children {
+            child.update();
+        }
     }
 }
