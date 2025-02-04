@@ -30,8 +30,8 @@ impl Widget for TextWidget {
         }
     }
 
-    fn size_hint(&self) -> (u16, u16) {
-        (self.text.len() as u16, 1)
+    fn get_constraints(&self) -> (Option<u16>, Option<u16>) {
+        (Some(self.text.len() as u16), Some(1))
     }
 
     fn update(&mut self) {

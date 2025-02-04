@@ -38,6 +38,9 @@ use crate::widget::Widget;
 mod tile_widget;
 use tile_widget::{Tile, Layout};
 
+mod app;
+use app::App;
+
 fn print_usage_message() {
     println!("Usage: ");
     println!("tsm  [Options]");
@@ -102,12 +105,10 @@ pub fn flush_buffer_to_crossterm(buffer: &Buffer) -> crossterm::Result<()> {
 fn main() {
     let args: Vec<String> = env::args().collect();
   
-    let (mut screen_w, mut screen_h) = terminal::size().expect(
+    let (screen_w, screen_h) = terminal::size().expect(
         "Can't get terminal size"
     );
 
-    // leave last line for information
-    screen_h -= 1;
     let mut config = match args.len() - 1 {
         0 => AppConfig::new(String::new(), screen_w, screen_h),
         1 => match args[1].as_str() {
@@ -143,50 +144,30 @@ fn main() {
     }
 */
     let mut stdout = stdout();
-    let mut buffer = Buffer::new(screen_w, screen_h);
+    let mut app = App::new(screen_w, screen_h);
     
     // for test
     let caption = TextWidget::new("This is own capture!");
+    app.add_child(Box::new(caption));
 
-    let mut tile = Tile::new(screen_w, screen_h, Layout::Vertical);
+    let mut tile = Tile::new(None, None, Layout::Vertical, true);
     tile.add_child(Box::new(TextWidget::new("First")));
     tile.add_child(Box::new(TextWidget::new("Second")));
     tile.add_child(Box::new(ProgressBar::new("Ram", "Mb")));
+
+    app.add_child(Box::new(tile));
+
+    app.add_child(Box::new(TextWidget::new("q: exit")));
     
     execute!(stdout, EnterAlternateScreen, cursor::Hide,).unwrap();
 
     enable_raw_mode().unwrap();
 
-    tile.update();
     loop {
-        /*
-        for device in &mut devices {
-            device.update();
-            let position = device.get_position();
-            for (ind, row) in device.show().iter().enumerate() {
-                queue!(
-                    stdout,
-                    MoveTo(position.1, ind as u16 + position.0),
-                    Print(row)
-                ).unwrap(); 
-            }
-        } 
-        */
-        caption.render(&mut buffer, Rect{
-            x: 0, y: 0, width: screen_w, height: 1,
-        });
+        app.update();
+        app.render();
 
-        tile.render(
-            &mut buffer,
-            Rect {
-                x: 0,
-                y: 4,
-                width: screen_w,
-                height: screen_h - 4
-            }
-        );
-
-        let _ = flush_buffer_to_crossterm(&buffer);
+        let _ = flush_buffer_to_crossterm(&app.buffer);
 
         if poll(Duration::from_millis(250)).unwrap() {
             match read().unwrap() {
@@ -200,13 +181,7 @@ fn main() {
                 }
                 Event::Resize(width, height) => {
                     queue!(stdout, terminal::Clear(terminal::ClearType::All)).unwrap();
-
-                    screen_w = width;
-                    screen_h = height;
-                    
-                    buffer = Buffer::new(width, height);
-                    tile.width = width;
-                    tile.height = height - 4;
+                    app.resize(width, height);
                     
                 },
                 _ => (),

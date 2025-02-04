@@ -1,6 +1,6 @@
-use super::widget::Widget;
+
+use super::widget::{Widget, Rect};
 use super::buffer::{Buffer, Cell};
-use super::widget::Rect;
 
 
 pub enum Layout {
@@ -10,19 +10,21 @@ pub enum Layout {
 }
 
 pub struct Tile {
-    pub width: u16,
-    pub height: u16,
+    pub width: Option<u16>,
+    pub height: Option<u16>,
     pub children: Vec<Box<dyn Widget>>,
     pub layout: Layout,
+        border: bool
 }
 
 impl Tile {
-    pub fn new(width: u16, height: u16, layout: Layout) -> Self {
+    pub fn new(width: Option<u16>, height: Option<u16>, layout: Layout, border: bool) -> Self {
         Self {
             children: Vec::new(),
             width,
             height,
             layout,
+            border
         }
     }
 
@@ -33,6 +35,17 @@ impl Tile {
 
 impl Widget for Tile {
     fn render(&self, buff: &mut Buffer, area: Rect) {
+       let border_size = if self.border == true  {
+          2 
+       } else {
+           0
+       };
+        
+       // check that it at least 1 row inside widget
+       if area.width <= 1 + border_size {
+           return
+       } 
+       
        let x1 = area.x;
        let y1 = area.y;
        let x2 = x1 + area.width.saturating_sub(1);
@@ -154,7 +167,7 @@ impl Widget for Tile {
        
     }
 
-    fn size_hint(&self) -> (u16, u16) {
+    fn get_constraints(&self) -> (Option<u16>, Option<u16>) {
         (self.width, self.height)
     }
 

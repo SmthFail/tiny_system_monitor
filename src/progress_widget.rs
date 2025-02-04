@@ -60,8 +60,8 @@ impl Widget for ProgressBar {
         }
     }
 
-    fn size_hint(&self) -> (u16, u16) {
-        (1, 1)
+    fn get_constraints(&self) -> (Option<u16>, Option<u16>) {
+        (Some(1), Some(1))
     }
 
     fn update(&mut self) {
