@@ -1,5 +1,7 @@
 use super::buffer::{Buffer, Cell};
 use super::widget::{Widget, Rect};
+use crossterm::terminal;
+use std::process;
 
 pub struct App {
     pub buffer: Buffer,
@@ -7,8 +9,13 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(width: u16, height: u16) -> Self {
-        let buffer = Buffer::new(width, height);
+    pub fn new() -> Self {
+        let (width, heigth) = terminal::size().unwrap_or_else(|err|{
+            eprintln!("Error while get terminal size: {}", err);
+            process::exit(-1);
+        });
+
+        let buffer = Buffer::new(width, heigth);
         App {
             buffer,
             childrens: Vec::new()

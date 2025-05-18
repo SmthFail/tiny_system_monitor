@@ -9,7 +9,7 @@ pub enum Layout {
     Grid { rows: u16, columns: u16 },
 }
 
-pub struct Tile {
+pub struct Container {
     pub width: Option<u16>,
     pub height: Option<u16>,
     pub children: Vec<Box<dyn Widget>>,
@@ -17,7 +17,7 @@ pub struct Tile {
         border: bool
 }
 
-impl Tile {
+impl Container {
     pub fn new(width: Option<u16>, height: Option<u16>, layout: Layout, border: bool) -> Self {
         Self {
             children: Vec::new(),
@@ -31,21 +31,8 @@ impl Tile {
     pub fn add_child(&mut self, w: Box<dyn Widget>) {
         self.children.push(w);
     }
-}
 
-impl Widget for Tile {
-    fn render(&self, buff: &mut Buffer, area: Rect) {
-       let border_size = if self.border == true  {
-          2 
-       } else {
-           0
-       };
-        
-       // check that it at least 1 row inside widget
-       if area.width <= 1 + border_size {
-           return
-       } 
-       
+    fn draw_border(&self, buff: &mut Buffer, area: Rect) {
        let x1 = area.x;
        let y1 = area.y;
        let x2 = x1 + area.width.saturating_sub(1);
@@ -77,10 +64,31 @@ impl Widget for Tile {
             }
        }
 
-       // inner area for children
+
+    }
+}
+
+impl Widget for Container {
+    fn render(&self, buff: &mut Buffer, area: Rect) {
+       let border_size = if self.border {
+          2 
+       } else {
+           0
+       };
+
+       if self.border {
+           self.draw_border(buff, area)
+       }
+        
+       // check that it at least 1 row inside widget
+       if area.width <= 1 + border_size {
+           return
+       } 
+       
+              // inner area for children
        let inner = Rect {
-           x: x1 + 1,
-           y: y1 + 1,
+           x: area.x + 1,
+           y: area.y + 1,
            width: area.width.saturating_sub(2),
            height: area.height.saturating_sub(2)
        };

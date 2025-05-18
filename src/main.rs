@@ -1,42 +1,37 @@
-use::std::env;
 mod app_config;
 mod file_config;
-use crate::app_config::AppConfig;
 
 use std::io::{stdout, Write};
 
 use crossterm::event::{poll, read, Event, KeyEvent, KeyCode, KeyModifiers};
 use crossterm::{cursor, execute, queue};
 use crossterm::cursor::MoveTo;
-use crossterm::style::{Print, ResetColor, Color, SetForegroundColor};
+use crossterm::style::Print;
 use crossterm::terminal::{
-    self, disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen
+    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen
 };
-use progress_widget::ProgressBar;
 use text_widget::TextWidget;
 
 use std::time::Duration;
-
 mod cpu_info;
 mod gpu_info;
 mod ui;
-mod device_model;
-use device_model::{Device, DEVICE_REGISTRY};
-mod cpu_device;
-mod gpu_device;
+//mod device_model;
+//use device_model::{Device, DEVICE_REGISTRY};
+//mod cpu_device;
+//mod gpu_device;
 
 mod widget;
-use widget::Rect;
+//use widget::Rect;
 
 mod buffer;
-use buffer::{Buffer};
+use buffer::Buffer;
 
 mod text_widget;
 mod progress_widget;
-use crate::widget::Widget;
 
-mod tile_widget;
-use tile_widget::{Tile, Layout};
+mod container_widget;
+use container_widget::{Container, Layout};
 
 mod app;
 use app::App;
@@ -53,11 +48,6 @@ fn print_usage_message() {
 pub fn flush_buffer_to_crossterm(buffer: &Buffer) -> crossterm::Result<()> {
     let mut stdout = stdout();
 
-    // Для примера — просто бежим по всем ячейкам и выводим символы.
-    // Можно оптимизировать, обновляя только те ячейки, что изменились с прошлого кадра.
-
-    let mut last_fg: Option<Color> = None;
-    let mut last_bg: Option<Color> = None;
 
     for y in 0..buffer.height {
         for x in 0..buffer.width {
@@ -66,97 +56,26 @@ pub fn flush_buffer_to_crossterm(buffer: &Buffer) -> crossterm::Result<()> {
             
             // Двигаем курсор в (x, y)
             queue!(stdout, MoveTo(x, y))?;
-            /*
-            // Устанавливаем цвет перед тем, как вывести символ (если отличается от предыдущего)
-            if cell.fg != last_fg {
-                if let Some(fg_color) = &cell.fg {
-                    queue!(stdout, SetForegroundColor(to_crossterm_color(fg_color)))?;
-                } else {
-                    // Сброс цвета
-                    queue!(stdout, SetForegroundColor(CtColor::Reset))?;
-                }
-                last_fg = cell.fg.clone();
-            }
-            if cell.bg != last_bg {
-                if let Some(bg_color) = &cell.bg {
-                    queue!(stdout, SetBackgroundColor(to_crossterm_color(bg_color)))?;
-                } else {
-                    // Сброс фона
-                    queue!(stdout, SetBackgroundColor(CtColor::Reset))?;
-                }
-                last_bg = cell.bg.clone();
-            }
-            */
-            // Выводим символ
-            queue!(stdout, Print(cell.symbol))?;
+           queue!(stdout, Print(cell.symbol))?;
         }
     }
-
-    // Сбрасываем цвета в конце (по желанию)
-    // queue!(stdout, SetForegroundColor(CtColor::Reset))?;
-    // queue!(stdout, SetBackgroundColor(CtColor::Reset))?;
 
     stdout.flush()?;
     Ok(())
 }
 
 
-
 fn main() {
-    let args: Vec<String> = env::args().collect();
-  
-    let (screen_w, screen_h) = terminal::size().expect(
-        "Can't get terminal size"
-    );
-
-    let mut config = match args.len() - 1 {
-        0 => AppConfig::new(String::new(), screen_w, screen_h),
-        1 => match args[1].as_str() {
-            "-h" => {
-                print_usage_message();
-                return;
-            },
-            "--help" => {
-                print_usage_message();
-                return;
-            },
-            _ =>  AppConfig::new(args[1].clone(), screen_w, screen_h),
- 
-
-        },
-        _ => { 
-            eprintln!("ERROR: Invalid number of arguments");
-            print_usage_message();
-            return;
-        }
-    };
-    /*
-    let mut devices: Vec<Box<dyn Device>> = Vec::new();
-    
-    for tile in &config.tiles {
-        if let Some(factory) = DEVICE_REGISTRY.get(tile.name.as_str()) {
-           let device = (factory)(tile);
-           devices.push(device);
-        }
-        else {
-            println!("Device {} not found in allowed list!", tile.name);
-        }
-    }
-*/
     let mut stdout = stdout();
-    let mut app = App::new(screen_w, screen_h);
     
-    // for test
-    let caption = TextWidget::new("This is own capture!");
-    app.add_child(Box::new(caption));
+    let mut app = App::new();
 
-    let mut tile = Tile::new(None, None, Layout::Vertical, true);
-    tile.add_child(Box::new(TextWidget::new("First")));
-    tile.add_child(Box::new(TextWidget::new("Second")));
-    tile.add_child(Box::new(ProgressBar::new("Ram", "Mb")));
+    // main container 
+    let mut tile = Container::new(None, None, Layout::Horizontal, false);
+    tile.add_child(Box::new(cpu_info::CpuInfo::new()));
+    tile.add_child(Box::new(gpu_info::GpuInfo::new()));
 
     app.add_child(Box::new(tile));
-
     app.add_child(Box::new(TextWidget::new("q: exit")));
     
     execute!(stdout, EnterAlternateScreen, cursor::Hide,).unwrap();
@@ -180,23 +99,14 @@ fn main() {
                     break;
                 }
                 Event::Resize(width, height) => {
-                    queue!(stdout, terminal::Clear(terminal::ClearType::All)).unwrap();
+                    //queue!(stdout, terminal::Clear(terminal::ClearType::All)).unwrap();
                     app.resize(width, height);
                     
                 },
                 _ => (),
             }
         }
-        /*
-        queue!(
-            stdout, 
-            MoveTo(0, screen_h), 
-            SetForegroundColor(Color::Green),
-            Print(format!("q: exit, config: {}", config.name)),
-            ResetColor).unwrap();
-        stdout.flush().unwrap();
-        */
-                std::thread::sleep(std::time::Duration::from_millis(250));
+        std::thread::sleep(std::time::Duration::from_millis(250));
         
     }
     disable_raw_mode().unwrap();
