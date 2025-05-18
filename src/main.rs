@@ -31,7 +31,7 @@ mod text_widget;
 mod progress_widget;
 
 mod container_widget;
-use container_widget::{Container, Layout};
+use container_widget::{Container, Layout, Alignment};
 
 mod app;
 use app::App;
@@ -71,7 +71,7 @@ fn main() {
     let mut app = App::new();
 
     // main container 
-    let mut tile = Container::new(None, None, Layout::Horizontal, false);
+    let mut tile = Container::new(None, None, Layout::Horizontal, Alignment::Start, false);
     tile.add_child(Box::new(cpu_info::CpuInfo::new()));
     tile.add_child(Box::new(gpu_info::GpuInfo::new()));
 

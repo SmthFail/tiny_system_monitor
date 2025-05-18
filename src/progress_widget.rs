@@ -24,7 +24,7 @@ impl ProgressBar {
 }
 
 impl Widget for ProgressBar {
-    fn render(&self, buff: &mut Buffer, area: Rect) {
+    fn render(&mut self, buff: &mut Buffer, area: Rect) {
         let progress_bar_width = area.width
             .saturating_sub(self.title.len() as u16)
             .saturating_sub(self.postfix.len() as u16)

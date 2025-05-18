@@ -2,8 +2,9 @@ use sysinfo::System;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use super::container_widget::{Container, Layout};
+use super::container_widget::{Container, Layout, Alignment};
 use super::progress_widget::ProgressBar;
+use crate::text_widget::TextWidget;
 use crate::Buffer;
 use crate::widget::{Widget, Rect};
 
@@ -34,7 +35,9 @@ impl CpuInfo {
         let swap_total =  Rc::new(RefCell::new(1.0));
       
         // create ui 
-        let mut ui = Container::new(None, None, Layout::Vertical, true);
+        let mut ui = Container::new(None, None, Layout::Vertical, Alignment::Start, true);
+
+        ui.add_child(Box::new(TextWidget::new("Cpu info")));
         
         let total_progress = Rc::new(RefCell::new(100.0));
         for (i, cpu_usage) in cpus_usage.iter().enumerate() {
@@ -81,7 +84,7 @@ impl CpuInfo {
 }
 
 impl Widget for CpuInfo {
-    fn render(&self, buf: &mut Buffer, area: Rect) {
+    fn render(&mut self, buf: &mut Buffer, area: Rect) {
         self.ui.render(buf, area);
     }
 

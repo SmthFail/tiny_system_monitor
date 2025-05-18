@@ -10,7 +10,7 @@ pub struct Rect {
 }
 
 pub trait Widget {
-    fn render(&self, buf: &mut Buffer, area: Rect);
+    fn render(&mut self, buf: &mut Buffer, area: Rect);
 
     fn get_constraints(&self) -> (Option<u16>, Option<u16>);
 

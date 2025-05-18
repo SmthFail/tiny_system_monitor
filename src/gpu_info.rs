@@ -6,7 +6,7 @@ use std::cell::RefCell;
 use crate::Buffer;
 use crate::widget::{Widget, Rect};
 use nvml_wrapper::Nvml;
-use crate::container_widget::{Container, Layout};
+use crate::container_widget::{Container, Layout, Alignment};
 use super::progress_widget::ProgressBar;
 use super::text_widget::TextWidget;
 
@@ -99,11 +99,13 @@ impl GpuInfo{
 
 
         // create ui
-        let mut ui = Container::new(None, None, Layout::Vertical, true);
+        let mut ui = Container::new(None, None, Layout::Vertical, Alignment::Start, true);
+
+        ui.add_child(Box::new(TextWidget::new("Gpu info")));
 
         for gpu in gpus.iter() {
 
-            let mut gpu_container = Container::new(None, None, Layout::Vertical, false);
+            let mut gpu_container = Container::new(None, None, Layout::Vertical, Alignment::Start, false);
 
             gpu_container.add_child(Box::new(TextWidget::new(&gpu.gpu_info)));
             gpu_container.add_child(Box::new(ProgressBar::new(
@@ -133,7 +135,7 @@ impl GpuInfo{
 
 
 impl Widget for GpuInfo {
-    fn render(&self, buf: &mut Buffer, area: Rect) {
+    fn render(&mut self, buf: &mut Buffer, area: Rect) {
         self.ui.render(buf, area);
     }
 

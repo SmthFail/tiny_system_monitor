@@ -16,7 +16,7 @@ impl TextWidget {
 }
 
 impl Widget for TextWidget {
-    fn render(&self, buff: &mut Buffer, area: Rect) {
+    fn render(&mut self, buff: &mut Buffer, area: Rect) {
         let max_width = area.width as usize;
         let text_bytes = self.text.chars().take(max_width).collect::<Vec<_>>();
 
