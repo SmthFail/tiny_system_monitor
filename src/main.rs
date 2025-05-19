@@ -76,7 +76,10 @@ fn main() {
     tile.add_child(Box::new(gpu_info::GpuInfo::new()));
 
     app.add_child(Box::new(tile));
-    app.add_child(Box::new(TextWidget::new("q: exit")));
+
+    let version = env!("CARGO_PKG_VERSION");
+    let status_string = format!("q: exit, ver: {}", version);
+    app.add_child(Box::new(TextWidget::new(&status_string)));
     
     execute!(stdout, EnterAlternateScreen, cursor::Hide,).unwrap();
 
