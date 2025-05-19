@@ -76,11 +76,11 @@ impl CpuInfo {
 
         self.sys.refresh_memory();
         // below convert all to Gb. TODO create autodetect
-        *self.ram_used.borrow_mut() = (self.sys.used_memory() / 1024 / 1024 / 1024) as f64;
-        *self.ram_total.borrow_mut() = (self.sys.total_memory() / 1024 / 1024/ 1024) as f64;
+        *self.ram_used.borrow_mut() = self.sys.used_memory() as f64 / 1024.0 / 1024.0 / 1024.0;
+        *self.ram_total.borrow_mut() = self.sys.total_memory() as f64 / 1024.0 / 1024.0 / 1024.0;
 
-        *self.swap_used.borrow_mut() = (self.sys.used_swap() / 1024 / 1024 / 1024) as f64;
-        *self.swap_total.borrow_mut() = (self.sys.total_swap() / 1024 / 1024 / 1024) as f64;
+        *self.swap_used.borrow_mut() = self.sys.used_swap() as f64 / 1024.0 / 1024.0 / 1024.0;
+        *self.swap_total.borrow_mut() = self.sys.total_swap() as f64 / 1024.0 / 1024.0 / 1024.0;
     }
 
 }

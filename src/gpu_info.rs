@@ -49,8 +49,8 @@ impl Gpu {
             Err(_err) => panic!("{}", _err),
         };
 
-        let memory_used = (memory_info.used / 1024 / 1024 / 1024) as f64;
-        let memory_total = (memory_info.total / 1024 /1024 / 1024) as f64;
+        let memory_used = memory_info.used as f64 / 1024.0 / 1024.0 / 1024.0;
+        let memory_total = memory_info.total as f64 / 1024.0 /1024.0 / 1024.0;
 
         Gpu {
             index, 
@@ -70,7 +70,7 @@ impl Gpu {
         };
 
         *self.memory_used.borrow_mut() = match device.memory_info() {
-            Ok(memory_info) => (memory_info.used / 1024 / 1024 / 1024) as f64,
+            Ok(memory_info) => memory_info.used as f64 / 1024.0 / 1024.0 / 1024.0,
             Err(_err) => panic!("{}", _err),
         };
 
