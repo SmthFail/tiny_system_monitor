@@ -5,10 +5,12 @@ use std::cell::RefCell;
 
 use crate::Buffer;
 use crate::widget::{Widget, Rect};
-use nvml_wrapper::Nvml;
+use nvml_wrapper::{Nvml, error::NvmlError};
 use crate::container_widget::{Container, Layout, Alignment};
 use super::progress_widget::ProgressBar;
 use super::text_widget::TextWidget;
+
+use std::ffi::OsStr;
 
 struct Gpu{
     index: u32,
@@ -90,9 +92,11 @@ pub struct GpuInfo{
 
 impl GpuInfo{
     pub fn new() -> Self {
-        let nvml = Nvml::init().unwrap(); // TODO handle error
-        let device_count = nvml.device_count().unwrap();
+        let nvml = Self::_search_nvml().unwrap_or_else(|err| {
+            panic!("Error in load gpu driver: {}", err)
+        });
         
+        let device_count = nvml.device_count().unwrap();
         
         let mut gpus = Vec::new();
         for i in 0..device_count {
@@ -127,6 +131,27 @@ impl GpuInfo{
             gpus,
             ui: Box::new(ui)
         }
+    }
+
+    fn _search_nvml() -> Result<Nvml, NvmlError> {
+        if let Ok(nvml) = Nvml::init() {
+            return Ok(nvml);
+        }
+
+        let candidates: &[&str] = &[
+            "libnvidia-ml.so",            
+            "libnvidia-ml.so.1",
+        ]; 
+
+        for &name in candidates {
+            let lib_path = OsStr::new(name);
+            match Nvml::builder().lib_path(lib_path).init() {
+                Ok(nvml) => return Ok(nvml),
+                Err(NvmlError::LibloadingError(_)) => continue,
+                Err(e) => return Err(e)
+            }
+        }
+        Err(NvmlError::LibraryNotFound)
     }
 
     pub fn update(&mut self) {
