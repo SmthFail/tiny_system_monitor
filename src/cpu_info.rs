@@ -45,12 +45,13 @@ impl CpuInfo {
                 &format!("{:3}", i),
                 "%",
                 &cpu_usage,
-                &total_progress);
+                &total_progress,
+                true);
             ui.add_child(Box::new(cpu_progress));
         }
 
-        let ram_progress = ProgressBar::new("RAM", "MB", &ram_used, &ram_total);
-        let swap_progress = ProgressBar::new("SWP", "MB", &swap_used, &swap_total);
+        let ram_progress = ProgressBar::new("RAM", "GB", &ram_used, &ram_total, false);
+        let swap_progress = ProgressBar::new("SWP", "GB", &swap_used, &swap_total, false);
 
         ui.add_child(Box::new(ram_progress));
         ui.add_child(Box::new(swap_progress));
@@ -74,11 +75,12 @@ impl CpuInfo {
         }
 
         self.sys.refresh_memory();
-        *self.ram_used.borrow_mut() = (self.sys.used_memory() / 1024 / 1024) as f64;
-        *self.ram_total.borrow_mut() = (self.sys.total_memory() / 1024 / 1024) as f64;
+        // below convert all to Gb. TODO create autodetect
+        *self.ram_used.borrow_mut() = (self.sys.used_memory() / 1024 / 1024 / 1024) as f64;
+        *self.ram_total.borrow_mut() = (self.sys.total_memory() / 1024 / 1024/ 1024) as f64;
 
-        *self.swap_used.borrow_mut() = (self.sys.used_swap() / 1024 / 1024) as f64;
-        *self.swap_total.borrow_mut() = (self.sys.total_swap() / 1024 / 1024) as f64;
+        *self.swap_used.borrow_mut() = (self.sys.used_swap() / 1024 / 1024 / 1024) as f64;
+        *self.swap_total.borrow_mut() = (self.sys.total_swap() / 1024 / 1024 / 1024) as f64;
     }
 
 }

@@ -140,8 +140,8 @@ impl Widget for Container {
        let inner = Rect {
            x: area.x + border_size,
            y: area.y + border_size,
-           width: area.width,
-           height: area.height
+           width: area.width - border_size,
+           height: area.height - border_size
        };
 
        if inner.width == 0 || inner.height == 0 {

@@ -8,17 +8,19 @@ pub struct ProgressBar {
     pub postfix: String,
     pub symbol: char,
         current_value: Rc<RefCell<f64>>,
-        total_value: Rc<RefCell<f64>>
+        total_value: Rc<RefCell<f64>>,
+        use_percent: bool
 }
 
 impl ProgressBar {
-    pub fn new(title: &str, postfix: &str, current_value: & Rc<RefCell<f64>>, total_value: & Rc<RefCell<f64>>) -> Self {
+    pub fn new(title: &str, postfix: &str, current_value: & Rc<RefCell<f64>>, total_value: & Rc<RefCell<f64>>, use_percent: bool) -> Self {
         Self {
             title: title.to_owned(), 
             postfix: postfix.to_owned(),
             symbol: '|',
             current_value: current_value.clone(),
-            total_value: total_value.clone()
+            total_value: total_value.clone(),
+            use_percent
         }
     }
 }
@@ -27,11 +29,15 @@ impl Widget for ProgressBar {
     fn render(&mut self, buff: &mut Buffer, area: Rect) {
         let progress_bar_width = area.width
             .saturating_sub(self.title.len() as u16)
-            .saturating_sub(self.postfix.len() as u16)
             .saturating_sub(2); // [ and ]
        
-        let progress_data = self.current_value.borrow().clone() as f64 / self.total_value.borrow().clone() as f64; 
-        let progress_indicator = format!("{:>5.1}%]{}", progress_data * 100.0, self.postfix);
+        let progress_data = self.current_value.borrow().clone() / self.total_value.borrow().clone(); 
+        let progress_indicator: String = if self.use_percent {
+            format!("{:>5.1}{}]", progress_data * 100.0, self.postfix)
+        }
+        else {
+            format!("{:.1}/{:.1}{}]", self.current_value.borrow(), self.total_value.borrow() , self.postfix)
+        };
         let load_width = (progress_bar_width as f64 * progress_data).floor() as usize;
         let remaining_width = progress_bar_width.saturating_sub(load_width as u16).saturating_sub(progress_indicator.len() as u16);
        

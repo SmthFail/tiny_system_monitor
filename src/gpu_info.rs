@@ -16,7 +16,7 @@ struct Gpu{
     memory_used: Rc<RefCell<f64>>,
     memory_total: Rc<RefCell<f64>>,
     utilization_rate: Rc<RefCell<f64>>,
-    temperature: u32,
+    temperature: Rc<RefCell<f64>>,
 }
 
 impl Gpu {
@@ -33,7 +33,7 @@ impl Gpu {
         let gpu_info = format!("{}, Cap: {}", name, capability);
         
         let temperature = match device.temperature(TemperatureSensor::Gpu) {
-            Ok(temperature) => temperature,
+            Ok(temperature) => temperature as f64,
             Err(_err) => panic!("Can't read temperature"),
         };
 
@@ -47,25 +47,28 @@ impl Gpu {
             Err(_err) => panic!("{}", _err),
         };
 
+        let memory_used = (memory_info.used / 1024 / 1024 / 1024) as f64;
+        let memory_total = (memory_info.total / 1024 /1024 / 1024) as f64;
+
         Gpu {
             index, 
             gpu_info,
-            temperature,
-            memory_used: Rc::new(RefCell::new(memory_info.used as f64)),
-            memory_total: Rc::new(RefCell::new(memory_info.total as f64)),
+            temperature: Rc::new(RefCell::new(temperature)),
+            memory_used: Rc::new(RefCell::new(memory_used)),
+            memory_total: Rc::new(RefCell::new(memory_total)),
             utilization_rate
         }
     }
 
     fn update(&mut self, nvml: &Nvml) {
         let device = nvml.device_by_index(self.index).unwrap();
-        self.temperature = match device.temperature(TemperatureSensor::Gpu) {
-            Ok(temperature) => temperature,
+        *self.temperature.borrow_mut() = match device.temperature(TemperatureSensor::Gpu) {
+            Ok(temperature) => temperature as f64,
             Err(_err) => panic!("Can't read temperature"),
         };
 
         *self.memory_used.borrow_mut() = match device.memory_info() {
-            Ok(memory_info) => memory_info.used as f64,
+            Ok(memory_info) => (memory_info.used / 1024 / 1024 / 1024) as f64,
             Err(_err) => panic!("{}", _err),
         };
 
@@ -106,15 +109,15 @@ impl GpuInfo{
         for gpu in gpus.iter() {
 
             let mut gpu_container = Container::new(None, None, Layout::Vertical, Alignment::Start, false);
-
-            gpu_container.add_child(Box::new(TextWidget::new(&gpu.gpu_info)));
+            let info_string = format!("{}, T: {}℃ ", &gpu.gpu_info, &gpu.temperature.borrow());
+            gpu_container.add_child(Box::new(TextWidget::new(&info_string)));
             gpu_container.add_child(Box::new(ProgressBar::new(
-                "GPU", "Mb", &gpu.memory_used, &gpu.memory_total) 
+                "GPU", "GB", &gpu.memory_used, &gpu.memory_total, false) 
             ));
             
             let total_gpu = Rc::new(RefCell::new(100.0));
             gpu_container.add_child(Box::new(ProgressBar::new(
-                "RAM", "Mb", &gpu.utilization_rate, &total_gpu)
+                "RAM", "%", &gpu.utilization_rate, &total_gpu, true)
             ));
             ui.add_child(Box::new(gpu_container));
         }
