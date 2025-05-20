@@ -1,6 +1,6 @@
 mod app_config;
 mod file_config;
-
+mod utils;      
 use std::io::{stdout, Write};
 
 use crossterm::event::{poll, read, Event, KeyEvent, KeyCode, KeyModifiers};
@@ -20,7 +20,7 @@ mod ui;
 //use device_model::{Device, DEVICE_REGISTRY};
 //mod cpu_device;
 //mod gpu_device;
-
+use std::process;
 mod widget;
 //use widget::Rect;
 
@@ -35,6 +35,8 @@ use container_widget::{Container, Layout, Alignment};
 
 mod app;
 use app::App;
+
+use utils::version_checker::get_version;
 
 fn print_usage_message() {
     println!("Usage: ");
@@ -84,6 +86,8 @@ pub fn flush_buffer_to_crossterm(buffer: &Buffer) -> crossterm::Result<()> {
 fn main() {
     let mut stdout = stdout();
     
+    let version = get_version();
+    
     let mut app = App::new();
 
     // main container 
@@ -93,8 +97,7 @@ fn main() {
 
     app.add_child(Box::new(tile));
 
-    let version = env!("CARGO_PKG_VERSION");
-    let status_string = format!("q: exit, ver: {}", version);
+    let status_string = format!("q: exit, ver: {:?}", version);
     app.add_child(Box::new(TextWidget::new(&status_string)));
     
     execute!(stdout, EnterAlternateScreen, cursor::Hide,).unwrap();

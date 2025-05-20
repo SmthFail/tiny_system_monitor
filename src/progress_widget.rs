@@ -41,7 +41,7 @@ impl Widget for ProgressBar {
         };
 
         // calculate min width: title + '[' + bar + ']' + indicator
-        let min_width = self.title.len() as u16 + indicator.len() as u16 + 3; // TODO check why 3?
+        let min_width = self.title.len() as u16 + indicator.len() as u16 + 3; // TODO check wh 3?
                                                                               
                                                                               
         if area.width < min_width {
