@@ -6,7 +6,7 @@ use std::io::{stdout, Write};
 use crossterm::event::{poll, read, Event, KeyEvent, KeyCode, KeyModifiers};
 use crossterm::{cursor, execute, queue};
 use crossterm::cursor::MoveTo;
-use crossterm::style::Print;
+use crossterm::style::{SetForegroundColor, Print, ResetColor, Color as CrossColor};
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen
 };
@@ -25,7 +25,7 @@ mod widget;
 //use widget::Rect;
 
 mod buffer;
-use buffer::Buffer;
+use buffer::{Buffer, Color};
 
 mod text_widget;
 mod progress_widget;
@@ -54,9 +54,25 @@ pub fn flush_buffer_to_crossterm(buffer: &Buffer) -> crossterm::Result<()> {
             let idx = (y as usize) * (buffer.width as usize) + (x as usize);
             let cell = &buffer.cells[idx];
             
-            // Двигаем курсор в (x, y)
             queue!(stdout, MoveTo(x, y))?;
-           queue!(stdout, Print(cell.symbol))?;
+            match &cell.fg {
+                Some(color) => {
+                    let fg = match color {
+                        Color::Red => CrossColor::Red,
+                        Color::Green => CrossColor::Green,
+                        Color::Blue => CrossColor::Blue,
+                        Color::White => CrossColor::White,
+                        Color::Black => CrossColor::Black,
+                        Color::Yellow => CrossColor::DarkYellow
+                    };
+                    queue!(
+                        stdout, SetForegroundColor(fg),
+                        Print(cell.symbol),
+                        ResetColor
+                    )?
+                },
+                None => queue!(stdout, Print(cell.symbol))?
+            }
         }
     }
 

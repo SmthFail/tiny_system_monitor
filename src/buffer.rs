@@ -5,7 +5,8 @@ pub enum Color {
     Green,
     Blue,
     White,
-    Black
+    Black,
+    Yellow
 }
 
 #[derive(Clone, Debug)]
@@ -22,6 +23,16 @@ impl Cell {
             fg: None,
             bg: None
         }
+    }
+
+    pub fn fg(mut self, color: Color) -> Self {
+        self.fg = Some(color);
+        self
+    }
+
+    pub fn bg(mut self, color: Color) -> Self {
+        self.bg = Some(color);
+        self
     }
 }
 
