@@ -4,11 +4,11 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 use crate::Buffer;
-use crate::widget::{Widget, Rect};
+use crate::tui::widget::{Widget, Rect};
 use nvml_wrapper::{Nvml, error::NvmlError};
-use crate::container_widget::{Container, Layout, Alignment};
-use super::progress_widget::ProgressBar;
-use super::text_widget::TextWidget;
+use crate::tui::container_widget::{Container, Layout, Alignment};
+use super::tui::progress_bar_widget::ProgressBar;
+use super::tui::text_widget::TextWidget;
 
 use std::ffi::OsStr;
 

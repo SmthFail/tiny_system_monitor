@@ -10,31 +10,19 @@ use crossterm::style::{SetForegroundColor, Print, ResetColor, Color as CrossColo
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen
 };
-use text_widget::TextWidget;
 
 use std::time::Duration;
 mod cpu_info;
 mod gpu_info;
-mod ui;
-//mod device_model;
-//use device_model::{Device, DEVICE_REGISTRY};
-//mod cpu_device;
-//mod gpu_device;
-use std::process;
-mod widget;
-//use widget::Rect;
 
-mod buffer;
-use buffer::{Buffer, Color};
 
-mod text_widget;
-mod progress_widget;
+mod tui;
+use tui::app::App;
+use tui::container_widget::{Container, Alignment, Layout};
+use tui::text_widget::TextWidget;
+use tui::buffer::{Buffer, Color};
 
-mod container_widget;
-use container_widget::{Container, Layout, Alignment};
 
-mod app;
-use app::App;
 
 use utils::version_checker::get_version;
 

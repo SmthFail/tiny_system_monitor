@@ -2,11 +2,11 @@ use sysinfo::System;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use super::container_widget::{Container, Layout, Alignment};
-use super::progress_widget::ProgressBar;
-use crate::text_widget::TextWidget;
+use crate::tui::container_widget::{Container, Layout, Alignment};
+use crate::tui::progress_bar_widget::ProgressBar;
+use crate::tui::text_widget::TextWidget;
 use crate::Buffer;
-use crate::widget::{Widget, Rect};
+use crate::tui::widget::{Widget, Rect};
 
 pub struct CpuInfo {
     sys: System,
