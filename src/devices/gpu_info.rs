@@ -7,8 +7,8 @@ use crate::Buffer;
 use crate::tui::widget::{Widget, Rect};
 use nvml_wrapper::{Nvml, error::NvmlError};
 use crate::tui::container_widget::{Container, Layout, Alignment};
-use super::tui::progress_bar_widget::ProgressBar;
-use super::tui::text_widget::TextWidget;
+use crate::tui::progress_bar_widget::ProgressBar;
+use crate::tui::text_widget::TextWidget;
 
 use std::ffi::OsStr;
 

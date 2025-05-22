@@ -12,9 +12,8 @@ use crossterm::terminal::{
 };
 
 use std::time::Duration;
-mod cpu_info;
-mod gpu_info;
-
+mod devices;
+use crate::devices::{cpu_info, gpu_info};
 
 mod tui;
 use tui::app::App;
