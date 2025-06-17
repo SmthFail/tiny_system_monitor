@@ -173,6 +173,6 @@ impl Widget for GpuInfo {
     }
 
     fn get_constraints(&self) -> (Option<u16>, Option<u16>) {
-        (Some(1), Some(1))
+        (None, None)
     }
 }

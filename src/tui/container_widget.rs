@@ -78,49 +78,30 @@ impl Container {
     }
 
     fn _draw_vertical(&mut self, inner: Rect, buff: &mut Buffer) {
-        let spacer_height = match self.alignment {
-            Alignment::Start => {
-               0 
-            },
-            Alignment::Center => {
-                1
-            }
-            Alignment::End => {
-                2
-            }
-        };
         
-
         let mut current_row = inner.y;
         let children_count = self.children.len();
-        let mut total_height = 0;
-        
-        for (i, child) in &mut self.children.iter_mut().enumerate() {
-            let desire_height = if i == children_count - 1 {
-                inner.height - total_height
-            } else {
-                inner.height / children_count as u16
-            };
 
-            let (_, h) = child.get_constraints();
+        let child_height = inner.height / children_count as u16;
+        for (i, child) in &mut self.children.iter_mut().enumerate() {
+
+            let (_, mut h) = child.get_constraints();
             let child_rect = match h {
                 Some(h) => Rect {
-                   x: inner.x,
+                   x: inner.x ,
                    y: current_row,
                    width: inner.width,
-                   height: h + spacer_height 
+                   height: h 
                 },
                 None => Rect {
                     x: inner.x,
                     y: current_row,
                     width: inner.width,
-                    height: desire_height 
+                    height: child_height 
                 }
              };
-
-               child.render(buff, child_rect);
-               current_row += child_rect.height;
-               total_height += desire_height
+            child.render(buff, child_rect);
+            current_row += child_rect.height;
        }
     }
 }
