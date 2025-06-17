@@ -92,11 +92,17 @@ impl Container {
         
 
         let mut current_row = inner.y;
+        let children_count = self.children.len();
+        let mut total_height = 0;
         
-        for child in &mut self.children.iter_mut() {
-            
+        for (i, child) in &mut self.children.iter_mut().enumerate() {
+            let desire_height = if i == children_count - 1 {
+                inner.height - total_height
+            } else {
+                inner.height / children_count as u16
+            };
+
             let (_, h) = child.get_constraints();
-            
             let child_rect = match h {
                 Some(h) => Rect {
                    x: inner.x,
@@ -108,12 +114,13 @@ impl Container {
                     x: inner.x,
                     y: current_row,
                     width: inner.width,
-                    height: (buff.height - current_row)
+                    height: desire_height 
                 }
              };
 
                child.render(buff, child_rect);
                current_row += child_rect.height;
+               total_height += desire_height
        }
     }
 }

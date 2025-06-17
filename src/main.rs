@@ -13,7 +13,7 @@ use crossterm::terminal::{
 
 use std::time::Duration;
 mod devices;
-use crate::devices::{cpu_info, gpu_info};
+use crate::devices::{cpu_info, gpu_info, network_info};
 
 mod tui;
 use tui::app::App;
@@ -78,11 +78,15 @@ fn main() {
     let mut app = App::new();
 
     // main container 
-    let mut tile = Container::new(None, None, Layout::Horizontal, Alignment::Start, false);
-    tile.add_child(Box::new(cpu_info::CpuInfo::new()));
-    tile.add_child(Box::new(gpu_info::GpuInfo::new()));
+    let mut h_container = Container::new(None, None, Layout::Horizontal, Alignment::Start, false);
+    h_container.add_child(Box::new(cpu_info::CpuInfo::new()));
 
-    app.add_child(Box::new(tile));
+    let mut v_container = Container::new(None,None, Layout::Horizontal, Alignment::Start, false);
+    v_container.add_child(Box::new(gpu_info::GpuInfo::new()));
+    v_container.add_child(Box::new(network_info::NetworkInfo::new()));
+    h_container.add_child(Box::new(v_container));
+
+    app.add_child(Box::new(h_container));
 
     let status_string = format!("q: exit, ver: {:?}", version);
     app.add_child(Box::new(TextWidget::new(&status_string)));
