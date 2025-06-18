@@ -83,7 +83,7 @@ fn main() {
 
     let mut v_container = Container::new(None,None, Layout::Vertical, Alignment::Start, false);
     v_container.add_child(Box::new(gpu_info::GpuInfo::new()));
-    v_container.add_child(Box::new(network_info::NetworkInfo::new()));
+    v_container.add_child(Box::new(network_info::NetworkInfo::new(true)));
     h_container.add_child(Box::new(v_container));
 
     app.add_child(Box::new(h_container));

@@ -20,7 +20,7 @@ pub struct Container {
     pub children: Vec<Box<dyn Widget>>,
     pub layout: Layout,
     pub alignment: Alignment,
-        border: bool
+        border: bool,
 }
 
 impl Container {
@@ -77,38 +77,98 @@ impl Container {
        }
     }
 
-    fn _draw_vertical(&mut self, inner: Rect, buff: &mut Buffer) {
-        
+    fn _draw_vertical(&mut self, inner: Rect, buff: &mut Buffer, childs_size: Vec<(u16, u16)>) {
         let mut current_row = inner.y;
-        let children_count = self.children.len();
-
-        let child_height = inner.height / children_count as u16;
-        for (i, child) in &mut self.children.iter_mut().enumerate() {
-
-            let (_, mut h) = child.get_constraints();
-            let child_rect = match h {
-                Some(h) => Rect {
-                   x: inner.x ,
-                   y: current_row,
-                   width: inner.width,
-                   height: h 
-                },
-                None => Rect {
-                    x: inner.x,
-                    y: current_row,
-                    width: inner.width,
-                    height: child_height 
-                }
-             };
+        for (i, child) in self.children.iter_mut().enumerate() {
+            let child_rect = Rect {
+                x: inner.x,
+                y: current_row,
+                width: inner.width,
+                height: childs_size[i].1
+            };
             child.render(buff, child_rect);
             current_row += child_rect.height;
-       }
+        }
     }
+
+    fn _draw_horizontal(&mut self, inner: Rect, buff: &mut Buffer, childs_size: Vec<(u16, u16)>) {
+        let mut current_col = inner.x;
+        for (i, child) in self.children.iter_mut().enumerate() {
+            let child_rect = Rect {
+                x: current_col,
+                y: inner.y,
+                width: childs_size[i].0,
+                height: inner.height
+            };
+            child.render(buff, child_rect);
+            current_col += child_rect.width;
+        }
+    }
+
+
+    fn calculate_childs_size(&mut self, area: Rect) -> Option<Vec<(u16, u16)>>{
+       if self.children.is_empty() {
+           return None;
+       } 
+       
+       let mut flex_vertical_count = 0;
+       let mut flex_horizontal_count = 0;
+       let mut fixed_vertical_size = 0;
+       let mut fixed_horizontal_size = 0;
+        
+
+       let mut childs_size: Vec<(u16, u16)> = self.children.iter().map(|child|{
+           let (w_opt, h_opt) = child.get_constraints();
+           let w = w_opt.unwrap_or(0);
+           let h = h_opt.unwrap_or(0);
+
+           if w == 0 {
+              flex_horizontal_count += 1; 
+           } else {
+              fixed_horizontal_size += w;
+           }
+
+           if h == 0 {
+               flex_vertical_count += 1;
+           } else {
+               fixed_vertical_size += h;
+           }
+
+           (w, h)
+       }).collect(); 
+
+       let flex_h_size = if flex_horizontal_count > 0 {
+           let remaining_space = area.width.saturating_sub(fixed_horizontal_size);
+           remaining_space / flex_horizontal_count
+       } else {
+           0
+       };
+
+       let flex_v_size = if flex_vertical_count > 0 {
+           let remaining_space = area.height.saturating_sub(fixed_vertical_size);
+           remaining_space / flex_vertical_count 
+       } else {
+           0
+       };
+
+       for (w, h) in childs_size.iter_mut() {
+           if *w == 0 {
+               *w = flex_h_size
+           }
+           if *h == 0 {
+               *h = flex_v_size
+           }
+       }
+
+       Some(childs_size)
+    }
+
+
 }
 
 impl Widget for Container {
 
-    fn render(&mut self, buff: &mut Buffer, area: Rect) {
+     fn render(&mut self, buff: &mut Buffer, area: Rect) {
        let border_size = if self.border {
           1 
        } else {
@@ -142,31 +202,17 @@ impl Widget for Container {
            return;
        }
 
+       let childs_size = match self.calculate_childs_size(inner) {
+           Some(size) => size,
+           None => return
+       };
+
        match self.layout {
            Layout::Vertical => {
-              self._draw_vertical(inner, buff);
+              self._draw_vertical(inner, buff, childs_size);
            }
            Layout::Horizontal => {
-                let child_width = inner.width / num_children as u16;
-                let mut current_col = inner.x;
-                for (i, child) in self.children.iter_mut().enumerate() {
-                    let width_for_child = if i == num_children -1 {
-                        inner.x + inner.width - current_col
-                    } else {
-                        child_width
-                    }; 
-                
-
-                    let child_rect = Rect {
-                        x: current_col,
-                        y: inner.y,
-                        width: width_for_child,
-                        height: inner.height
-                    };
-                    
-                    child.render(buff, child_rect);
-                    current_col += width_for_child;
-                }
+              self._draw_horizontal(inner, buff, childs_size);
            }
            Layout::Grid { rows, columns } => {
                 let cell_width = inner.width / columns;

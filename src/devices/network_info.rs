@@ -18,11 +18,12 @@ pub struct NetworkInfo {
     previous_rx: u64,
     previous_tx: u64,
     rate_string: Rc<RefCell<String>>,
+    constraints: (Option<u16>, Option<u16>),
     ui: Box<dyn Widget>
 }
 
 impl NetworkInfo {
-    pub fn new() -> Self {
+    pub fn new(border: bool) -> Self {
         let sys = System::new();
         let networks = Networks::new_with_refreshed_list();
         let previous_time = Instant::now();
@@ -35,8 +36,16 @@ impl NetworkInfo {
             previous_tx += data.transmitted();
         }
 
+        //calculate constraints
+        let constraints = if border {
+            (None, Some(4)) // 2 - border, 1 label, 1 rate string. Mb TODO further
+        } else {
+            (None, Some(2)) 
+        };
+
+
         //create ui
-        let mut ui = Container::new(None, None, Layout::Vertical, Alignment::Start, true);
+        let mut ui = Container::new(None, None, Layout::Vertical, Alignment::Start, border);
         ui.add_child(Box::new(TextWidget::new("Network info")));
 
         let dumb_string = Self::format_rate_string(0.0, 0.0);
@@ -50,6 +59,7 @@ impl NetworkInfo {
             previous_rx,
             previous_tx,
             rate_string,
+            constraints,
             ui: Box::new(ui)
         }
     }
@@ -116,8 +126,7 @@ impl Widget for NetworkInfo {
     }
 
     fn get_constraints(&self) -> (Option<u16>, Option<u16>) {
-        (None, None)
-        
+       self.constraints 
     }
 }
 
