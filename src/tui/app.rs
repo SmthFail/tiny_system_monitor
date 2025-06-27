@@ -1,11 +1,20 @@
-use super::buffer::{Buffer, Cell};
+use super::buffer::{Buffer, Cell, Color};
 use super::widget::{Widget, Rect};
 use crossterm::terminal;
 use std::process;
+use std::io::{stdout, Stdout, Write};
+use crossterm::event::{poll, read, Event, KeyEvent, KeyCode, KeyModifiers};
+use std::time::Duration;
+use crossterm::style::{SetForegroundColor, Print, ResetColor, Color as CrossColor};
+use crossterm::{cursor, execute, queue};
+use crossterm::cursor::MoveTo;
+
+
 
 pub struct App {
     pub buffer: Buffer,
-    childrens: Vec<Box<dyn Widget>>
+    childrens: Vec<Box<dyn Widget>>,
+    stdout: Stdout 
 }
 
 impl App {
@@ -15,10 +24,13 @@ impl App {
             process::exit(-1);
         });
 
+        let stdout = stdout();
+
         let buffer = Buffer::new(width, heigth);
         App {
             buffer,
-            childrens: Vec::new()
+            childrens: Vec::new(),
+            stdout
         }
     }
     
@@ -81,4 +93,76 @@ impl App {
             current_row += child_area.height;
         }
     }
+
+   fn flush_buffer_to_crossterm(&mut self) -> crossterm::Result<()> {
+
+
+        for y in 0..self.buffer.height {
+            for x in 0..self.buffer.width {
+                let idx = (y as usize) * (self.buffer.width as usize) + (x as usize);
+                let cell = &self.buffer.cells[idx];
+                
+                queue!(self.stdout, MoveTo(x, y))?;
+                match &cell.fg {
+                    Some(color) => {
+                        let fg = match color {
+                            Color::Red => CrossColor::Red,
+                            Color::Green => CrossColor::Green,
+                            Color::Blue => CrossColor::Blue,
+                            Color::White => CrossColor::White,
+                            Color::Black => CrossColor::Black,
+                            Color::Yellow => CrossColor::DarkYellow
+                        };
+                        queue!(
+                            self.stdout, SetForegroundColor(fg),
+                            Print(cell.symbol),
+                            ResetColor
+                        )?
+                    },
+                    None => queue!(self.stdout, Print(cell.symbol))?
+                }
+            }
+        }
+
+        self.stdout.flush()?;
+        Ok(())
+   }
+
+   pub fn run(&mut self) {
+        execute!(self.stdout, terminal::EnterAlternateScreen, cursor::Hide,).unwrap();
+
+        terminal::enable_raw_mode().unwrap();
+
+        loop {
+            self.update();
+            self.render();
+
+            let _ = self.flush_buffer_to_crossterm();
+
+            if poll(Duration::from_millis(250)).unwrap() {
+                match read().unwrap() {
+                    Event::Key(KeyEvent {
+                        code: KeyCode::Char('q'),
+                        modifiers: KeyModifiers::NONE,
+                        ..
+                    }) => {
+                        execute!(self.stdout, terminal::LeaveAlternateScreen, cursor::Show).unwrap();
+                        break;
+                    }
+                    Event::Resize(width, height) => {
+                        //queue!(stdout, terminal::Clear(terminal::ClearType::All)).unwrap();
+                        self.resize(width, height);
+                        
+                    },
+                    _ => (),
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_millis(250));
+            
+        }
+        terminal::disable_raw_mode().unwrap();
+         
+   }
+
+ 
 }

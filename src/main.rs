@@ -1,17 +1,7 @@
 mod app_config;
 mod file_config;
 mod utils;      
-use std::io::{stdout, Write};
 
-use crossterm::event::{poll, read, Event, KeyEvent, KeyCode, KeyModifiers};
-use crossterm::{cursor, execute, queue};
-use crossterm::cursor::MoveTo;
-use crossterm::style::{SetForegroundColor, Print, ResetColor, Color as CrossColor};
-use crossterm::terminal::{
-    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen
-};
-
-use std::time::Duration;
 mod devices;
 use crate::devices::{cpu_info, gpu_info, network_info};
 
@@ -19,8 +9,7 @@ mod tui;
 use tui::app::App;
 use tui::container_widget::{Container, Alignment, Layout};
 use tui::text_widget::TextWidget;
-use tui::buffer::{Buffer, Color};
-
+use crate::tui::buffer::Buffer;
 
 
 use utils::version_checker::get_version;
@@ -34,44 +23,8 @@ fn print_usage_message() {
 }
 
 
-pub fn flush_buffer_to_crossterm(buffer: &Buffer) -> crossterm::Result<()> {
-    let mut stdout = stdout();
-
-
-    for y in 0..buffer.height {
-        for x in 0..buffer.width {
-            let idx = (y as usize) * (buffer.width as usize) + (x as usize);
-            let cell = &buffer.cells[idx];
-            
-            queue!(stdout, MoveTo(x, y))?;
-            match &cell.fg {
-                Some(color) => {
-                    let fg = match color {
-                        Color::Red => CrossColor::Red,
-                        Color::Green => CrossColor::Green,
-                        Color::Blue => CrossColor::Blue,
-                        Color::White => CrossColor::White,
-                        Color::Black => CrossColor::Black,
-                        Color::Yellow => CrossColor::DarkYellow
-                    };
-                    queue!(
-                        stdout, SetForegroundColor(fg),
-                        Print(cell.symbol),
-                        ResetColor
-                    )?
-                },
-                None => queue!(stdout, Print(cell.symbol))?
-            }
-        }
-    }
-
-    stdout.flush()?;
-    Ok(())
-}
-
 
 fn main() {
-    let mut stdout = stdout();
     
     let version = get_version();
     
@@ -90,37 +43,5 @@ fn main() {
 
     let status_string = format!("q: exit, ver: {:?}", version);
     app.add_child(Box::new(TextWidget::new(&status_string)));
-    
-    execute!(stdout, EnterAlternateScreen, cursor::Hide,).unwrap();
-
-    enable_raw_mode().unwrap();
-
-    loop {
-        app.update();
-        app.render();
-
-        let _ = flush_buffer_to_crossterm(&app.buffer);
-
-        if poll(Duration::from_millis(250)).unwrap() {
-            match read().unwrap() {
-                Event::Key(KeyEvent {
-                    code: KeyCode::Char('q'),
-                    modifiers: KeyModifiers::NONE,
-                    ..
-                }) => {
-                    execute!(stdout, LeaveAlternateScreen, cursor::Show).unwrap();
-                    break;
-                }
-                Event::Resize(width, height) => {
-                    //queue!(stdout, terminal::Clear(terminal::ClearType::All)).unwrap();
-                    app.resize(width, height);
-                    
-                },
-                _ => (),
-            }
-        }
-        std::thread::sleep(std::time::Duration::from_millis(250));
-        
-    }
-    disable_raw_mode().unwrap();
-}
+    app.run();
+  }
