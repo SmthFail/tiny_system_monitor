@@ -1,45 +1,39 @@
 use super::buffer::{Buffer, Cell, Color};
 use super::widget::{Widget, Rect};
 use crossterm::terminal;
-use std::process;
 use std::io::{stdout, Stdout, Write};
 use crossterm::event::{poll, read, Event, KeyEvent, KeyCode, KeyModifiers};
 use std::time::Duration;
 use crossterm::style::{SetForegroundColor, Print, ResetColor, Color as CrossColor};
 use crossterm::{cursor, execute, queue};
 use crossterm::cursor::MoveTo;
-
+use super::app_error::AppError;
 
 
 pub struct App {
     pub buffer: Buffer,
-    childrens: Vec<Box<dyn Widget>>,
+    children: Vec<Box<dyn Widget>>,
     stdout: Stdout 
 }
 
 impl App {
-    pub fn new() -> Self {
-        let (width, heigth) = terminal::size().unwrap_or_else(|err|{
-            eprintln!("Error while get terminal size: {}", err);
-            process::exit(-1);
-        });
+    pub fn new() -> Result<Self, AppError> {
+        let (width, height) = terminal::size()
+            .map_err(|e| AppError::error(format!("Can't get terminal size {}", e)))?;
 
-        let stdout = stdout();
-
-        let buffer = Buffer::new(width, heigth);
-        App {
-            buffer,
-            childrens: Vec::new(),
-            stdout
-        }
+        Ok(App {
+            buffer: Buffer::new(width, height),
+            children: Vec::new(),
+            stdout: stdout()
+        })
     }
     
     pub fn add_child(&mut self, child: Box<dyn Widget>) {
-        self.childrens.push(child);
+        self.children.push(child);
     }
     
     pub fn update(&mut self) {
-        for child in &mut self.childrens {
+        for child in &mut self.children {
             child.update()
         }
     }
@@ -54,7 +48,7 @@ impl App {
         let mut fixed_lines: u16 = 0;
         let mut flex_widgets: u16 = 0;
 
-        for child in &self.childrens {
+        for child in &self.children {
             let (_, h) = child.get_constraints();
             match h {
                 Some(h) => fixed_lines += h,
@@ -70,7 +64,7 @@ impl App {
         }
 
         let mut current_row = 0;
-        for child in &mut self.childrens {
+        for child in &mut self.children {
             let (_, h) = child.get_constraints();
             let child_area = match h {
                 Some(h) => Rect {
@@ -83,7 +77,7 @@ impl App {
                     x: 0,
                     y: current_row,
                     width: self.buffer.width,
-                    height: (self.buffer.height - fixed_lines / flex_widgets)
+                    height: (self.buffer.height - fixed_lines) / flex_widgets
                 }
             };
             child.render(
@@ -94,7 +88,7 @@ impl App {
         }
     }
 
-   fn flush_buffer_to_crossterm(&mut self) -> crossterm::Result<()> {
+   fn flush_to_terminal(&mut self) -> crossterm::Result<()> {
 
 
         for y in 0..self.buffer.height {
@@ -128,7 +122,7 @@ impl App {
         Ok(())
    }
 
-   pub fn run(&mut self) {
+   pub fn run(&mut self) -> Result<(), AppError> {
         execute!(self.stdout, terminal::EnterAlternateScreen, cursor::Hide,).unwrap();
 
         terminal::enable_raw_mode().unwrap();
@@ -137,7 +131,7 @@ impl App {
             self.update();
             self.render();
 
-            let _ = self.flush_buffer_to_crossterm();
+            let _ = self.flush_to_terminal();
 
             if poll(Duration::from_millis(250)).unwrap() {
                 match read().unwrap() {
@@ -161,7 +155,7 @@ impl App {
             
         }
         terminal::disable_raw_mode().unwrap();
-         
+        Ok(()) 
    }
 
  

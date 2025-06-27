@@ -28,7 +28,10 @@ fn main() {
     
     let version = get_version();
     
-    let mut app = App::new();
+    let mut app = App::new().unwrap_or_else(|e| {
+        eprintln!("Init app error: {}", e.message);
+        std::process::exit(1)
+    });
 
     // main container 
     let mut h_container = Container::new(None, None, Layout::Horizontal, Alignment::Start, false);
@@ -43,5 +46,8 @@ fn main() {
 
     let status_string = format!("q: exit, ver: {:?}", version);
     app.add_child(Box::new(TextWidget::new(&status_string)));
-    app.run();
+    if let Err(e) = app.run() {
+        eprintln!("App exited with error: {}", e.message);
+        std::process::exit(1);
+    };
   }
