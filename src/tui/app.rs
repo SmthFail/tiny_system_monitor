@@ -9,11 +9,21 @@ use crossterm::{cursor, execute, queue};
 use crossterm::cursor::MoveTo;
 use super::app_error::AppError;
 
+use crate::Container;
+use crate::Layout;
+use crate::Alignment;
+use crate::TextWidget;
+
+use crate::get_version; 
+
 
 pub struct App {
     pub buffer: Buffer,
-    children: Vec<Box<dyn Widget>>,
-    stdout: Stdout 
+    children: Box<Container>,
+    stdout: Stdout,
+    width: u16,
+    height: u16,
+    status_row: Box<TextWidget>
 }
 
 impl App {
@@ -21,76 +31,58 @@ impl App {
         let (width, height) = terminal::size()
             .map_err(|e| AppError::error(format!("Can't get terminal size {}", e)))?;
 
+        let children = Container::new(None,None, Layout::Vertical, Alignment::Start, false);
+
+        // generate status row
+        let version = get_version();
+        let status_string = format!("q: exit, ver:{:?}", version);
+        let status_row = TextWidget::new(&status_string);
         Ok(App {
             buffer: Buffer::new(width, height),
-            children: Vec::new(),
-            stdout: stdout()
+            children: Box::new(children),
+            stdout: stdout(),
+            width,
+            height,
+            status_row: Box::new(status_row)
         })
     }
     
     pub fn add_child(&mut self, child: Box<dyn Widget>) {
-        self.children.push(child);
+        self.children.add_child(child);
     }
     
     pub fn update(&mut self) {
-        for child in &mut self.children {
-            child.update()
-        }
+        self.children.update();
+        self.status_row.update();
     }
 
-    pub fn resize(&mut self, width: u16, height: u16) {
-        self.buffer = Buffer::new(width, height);
+    pub fn resize(&mut self) {
+        self.buffer = Buffer::new(self.width, self.height);
         // TODO update size of child widget?
     }
 
     pub fn render(&mut self) {
-        // check numbers of fixed lines and number of flexed widget 
-        let mut fixed_lines: u16 = 0;
-        let mut flex_widgets: u16 = 0;
-
-        for child in &self.children {
-            let (_, h) = child.get_constraints();
-            match h {
-                Some(h) => fixed_lines += h,
-                None => flex_widgets += 1,
-            } 
-        }
-
-        if fixed_lines + flex_widgets >= self.buffer.height{
-           for (i, char) in "Overflowed".chars().enumerate() {
-               self.buffer.set_cell(i as u16, 0, Cell::new(char));
-           }
-           return;
-        }
-
-        let mut current_row = 0;
-        for child in &mut self.children {
-            let (_, h) = child.get_constraints();
-            let child_area = match h {
-                Some(h) => Rect {
-                    x: 0,
-                    y: current_row,
-                    width: self.buffer.width,
-                    height: h
-                },
-                None => Rect {
-                    x: 0,
-                    y: current_row,
-                    width: self.buffer.width,
-                    height: (self.buffer.height - fixed_lines) / flex_widgets
-                }
-            };
-            child.render(
-                &mut self.buffer,
-                child_area
-                );
-            current_row += child_area.height;
-        }
+        self.children.render(
+            &mut self.buffer,
+            Rect {
+               x: 0,
+               y: 0,
+               width: self.width,
+               height: self.height - 1, 
+            }
+        );
+        self.status_row.render(
+            &mut self.buffer,
+            Rect {
+                x: 0,
+                y: self.height - 1,
+                width: self.width,
+                height: 1
+            }
+            );
     }
 
-   fn flush_to_terminal(&mut self) -> crossterm::Result<()> {
-
-
+    fn flush_to_terminal(&mut self) -> crossterm::Result<()> {
         for y in 0..self.buffer.height {
             for x in 0..self.buffer.width {
                 let idx = (y as usize) * (self.buffer.width as usize) + (x as usize);
@@ -120,12 +112,14 @@ impl App {
 
         self.stdout.flush()?;
         Ok(())
-   }
+    }
 
-   pub fn run(&mut self) -> Result<(), AppError> {
-        execute!(self.stdout, terminal::EnterAlternateScreen, cursor::Hide,).unwrap();
+    pub fn run(&mut self) -> Result<(), AppError> {
+        execute!(self.stdout, terminal::EnterAlternateScreen, cursor::Hide,)
+            .map_err(|e| AppError::error(format!("Can't enter alternate screen: {}", e)))?;
 
-        terminal::enable_raw_mode().unwrap();
+        terminal::enable_raw_mode()
+            .map_err(|e| AppError::error(format!("Can't enable_raw_mode: {}", e)))?;
 
         loop {
             self.update();
@@ -133,30 +127,33 @@ impl App {
 
             let _ = self.flush_to_terminal();
 
-            if poll(Duration::from_millis(250)).unwrap() {
-                match read().unwrap() {
+            if poll(Duration::from_millis(500))
+                .map_err(|e| AppError::error(format!("Poll error: {}", e)))? {
+
+                let event = read().map_err(|e| AppError::error(format!("Event read error: {}", e)))?;
+                match event {
                     Event::Key(KeyEvent {
                         code: KeyCode::Char('q'),
                         modifiers: KeyModifiers::NONE,
                         ..
                     }) => {
-                        execute!(self.stdout, terminal::LeaveAlternateScreen, cursor::Show).unwrap();
                         break;
                     }
                     Event::Resize(width, height) => {
-                        //queue!(stdout, terminal::Clear(terminal::ClearType::All)).unwrap();
-                        self.resize(width, height);
-                        
+                        self.width = width;
+                        self.height = height;
+                        self.resize();
                     },
                     _ => (),
                 }
             }
-            std::thread::sleep(std::time::Duration::from_millis(250));
-            
         }
-        terminal::disable_raw_mode().unwrap();
-        Ok(()) 
-   }
+        terminal::disable_raw_mode()
+            .map_err(|e| AppError::error(format!("Can't disable raw mode: {}", e)))?;
 
- 
+        execute!(self.stdout, terminal::LeaveAlternateScreen, cursor::Show)
+            .map_err(|e| AppError::error(format!("Can't leave alternate screen: {}", e)))?;
+        
+        Ok(()) 
+    }
 }

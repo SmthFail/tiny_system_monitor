@@ -1,7 +1,6 @@
 mod app_config;
 mod file_config;
-mod utils;      
-
+mod utils;
 mod devices;
 use crate::devices::{cpu_info, gpu_info, network_info};
 
@@ -10,9 +9,8 @@ use tui::app::App;
 use tui::container_widget::{Container, Alignment, Layout};
 use tui::text_widget::TextWidget;
 use crate::tui::buffer::Buffer;
-
-
 use utils::version_checker::get_version;
+
 
 fn print_usage_message() {
     println!("Usage: ");
@@ -25,8 +23,6 @@ fn print_usage_message() {
 
 
 fn main() {
-    
-    let version = get_version();
     
     let mut app = App::new().unwrap_or_else(|e| {
         eprintln!("Init app error: {}", e.message);
@@ -44,10 +40,9 @@ fn main() {
 
     app.add_child(Box::new(h_container));
 
-    let status_string = format!("q: exit, ver: {:?}", version);
-    app.add_child(Box::new(TextWidget::new(&status_string)));
+    
     if let Err(e) = app.run() {
         eprintln!("App exited with error: {}", e.message);
         std::process::exit(1);
     };
-  }
+}
