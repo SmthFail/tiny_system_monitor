@@ -41,7 +41,7 @@ impl CpuInfo {
         // create ui 
         let mut ui = Container::new(None, None, Layout::Vertical, Alignment::Start, true);
 
-        ui.add_child(Box::new(TextWidget::new("Cpu info")));
+        ui.add_child(Box::new(TextWidget::new_static("Cpu info")));
         
         let total_progress = Rc::new(RefCell::new(100.0));
         for (i, cpu_usage) in cpus_usage.iter().enumerate() {

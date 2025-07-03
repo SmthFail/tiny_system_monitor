@@ -5,7 +5,6 @@ use std::rc::Rc;
 use crate::tui::widget::{Widget, Rect};
 use std::time::Instant;
 use crate::tui::container_widget::{Container, Layout, Alignment};
-use crate::tui::editable_text_widget::EditableTextWidget;
 use crate::TextWidget;
 use crate::Buffer;
 
@@ -48,11 +47,11 @@ impl NetworkInfo {
 
         //create ui
         let mut ui = Container::new(None, None, Layout::Vertical, Alignment::Start, border);
-        ui.add_child(Box::new(TextWidget::new("Network info")));
+        ui.add_child(Box::new(TextWidget::new_static("Network info")));
 
         let dumb_string = Self::format_rate_string(0.0, 0.0);
         let rate_string = Rc::new(RefCell::new(dumb_string));
-        ui.add_child(Box::new(EditableTextWidget::new(&rate_string)));
+        ui.add_child(Box::new(TextWidget::new_editable(rate_string.clone())));
 
         NetworkInfo {
             sys,
@@ -72,20 +71,20 @@ impl NetworkInfo {
         const GB: f64 = 1024.0 * MB;
 
         if bytes_per_sec >= GB {
-            format!("{:.2} GB/s", bytes_per_sec / GB)
+            format!("{:.2}GB/s", bytes_per_sec / GB)
         } else if bytes_per_sec >= MB {
-            format!("{:.2} MB/s", bytes_per_sec / MB)
+            format!("{:.2}MB/s", bytes_per_sec / MB)
         } else if bytes_per_sec >= KB {
-            format!("{:.2} KB/s", bytes_per_sec / KB)
+            format!("{:.2}KB/s", bytes_per_sec / KB)
         } else {
-            format!("{:.2}", bytes_per_sec)
+            format!("{:.2} B/s", bytes_per_sec)
         }
         
 
     }
 
     fn format_rate_string(rx: f64, tx: f64) -> String  {
-        format!("Rx: {} b/s, Tx: {} b/s", 
+        format!("Rx: {}, Tx: {}", 
             Self::format_speed(rx), 
             Self::format_speed(tx)
             )

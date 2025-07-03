@@ -1,40 +1,91 @@
 use super::buffer::{Buffer, Cell, Color};
 use super::widget::{Widget, Rect};
 use super::app_error::AppError;
+use std::{
+    rc::Rc,
+    cell::RefCell
+};
 
+enum TextSource {
+    Static(String),
+    Editable(Rc<RefCell<String>>),
+}
 
 pub struct TextWidget {
-    pub text: String,
+    pub text: TextSource,
     pub fg: Option<Color>,
+    pub bg: Option<Color>
 }
 
 impl TextWidget {
-    pub fn new(text: &str) -> Self {
+    pub fn new_static(text: &str) -> Self {
         Self {
-            text: text.to_owned(),
+            text: TextSource::Static(text.to_owned()),
             fg: None,
+            bg: None
         }
+    }
+
+    pub fn new_editable(text: Rc<RefCell<String>>) -> Self {
+        Self {
+            text: TextSource::Editable(text),
+            fg: None,
+            bg: None
+        }
+    }
+
+    pub fn set_color(mut self, fg: Option<Color>, bg: Option<Color>) -> Self {
+        self.fg = fg;
+        self.bg = bg;
+        self
     }
 }
 
 impl Widget for TextWidget {
     fn render(&mut self, buff: &mut Buffer, area: Rect) -> Result<(), AppError>{
         let max_width = area.width as usize;
-        let text_bytes = self.text.chars().take(max_width).collect::<Vec<_>>();
 
-        for (i, ch) in text_bytes.iter().enumerate() {
+        if max_width < 3 {
+            // TODO set bg to amber when bg will be added
+            return Err(AppError::warning("Overflowed!"))
+        }
+
+        let mut chars: Vec<char> = match &self.text {
+            TextSource::Static(s) => s.chars().collect(),
+            TextSource::Editable(s) => s.borrow().chars().collect(),
+        };
+
+        if chars.len() > max_width {
+            chars.truncate(max_width - 1);
+            chars.push('…')
+        }
+
+        for (i, ch) in chars.iter().enumerate() {
             let x = area.x + i as u16;
             let y = area.y;
             if x < buff.width && y < buff.height {
-                let cell = Cell::new(*ch);
+                let cell = Cell::new(*ch).fg(self.fg.clone()).bg(self.bg.clone());
                 buff.set_cell(x, y, cell);
             }
         }
+
+
+        if area.width as usize > chars.len() {
+            for i in chars.len()..area.width as usize {
+                let cell = Cell::new(' ').bg(self.bg.clone());
+                buff.set_cell(area.x + i as u16, area.y, cell)
+            }
+        }
+
         Ok(())
     }
 
     fn get_constraints(&self) -> (Option<u16>, Option<u16>) {
-        (Some(self.text.len() as u16), Some(1))
+        let width = match &self.text {
+            TextSource::Static(s) => s.len(),
+            TextSource::Editable(s) => s.borrow().len()
+        };
+        (Some(width as u16), Some(1))
     }
 
     fn update(&mut self) {

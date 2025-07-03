@@ -25,13 +25,13 @@ impl Cell {
         }
     }
 
-    pub fn fg(mut self, color: Color) -> Self {
-        self.fg = Some(color);
+    pub fn fg(mut self, color: Option<Color>) -> Self {
+        self.fg = color;
         self
     }
 
-    pub fn bg(mut self, color: Color) -> Self {
-        self.bg = Some(color);
+    pub fn bg(mut self, color: Option<Color>) -> Self {
+        self.bg = color;
         self
     }
 }

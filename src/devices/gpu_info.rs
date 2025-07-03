@@ -111,13 +111,13 @@ impl GpuInfo{
         // create ui
         let mut ui = Container::new(None, None, Layout::Vertical, Alignment::Start, true);
 
-        ui.add_child(Box::new(TextWidget::new("Gpu info")));
+        ui.add_child(Box::new(TextWidget::new_static("Gpu info")));
 
         for gpu in gpus.iter() {
             // set height to 4 untill implement auto size of container
             let mut gpu_container = Container::new(None, Some(4), Layout::Vertical, Alignment::Start, false);
             let info_string = format!("{}, T: {}℃ ", &gpu.gpu_info, &gpu.temperature.borrow());
-            gpu_container.add_child(Box::new(TextWidget::new(&info_string)));
+            gpu_container.add_child(Box::new(TextWidget::new_static(&info_string)));
             gpu_container.add_child(Box::new(ProgressBar::new(
                 "GPU", "GB", &gpu.memory_used, &gpu.memory_total, false) 
             ));

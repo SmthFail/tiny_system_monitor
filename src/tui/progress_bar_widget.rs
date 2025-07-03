@@ -80,7 +80,7 @@ impl Widget for ProgressBar {
             _       => Color::Red,
         };
 
-        let bar_symbol = buffCell::new(self.symbol).fg(bar_color);
+        let bar_symbol = buffCell::new(self.symbol).fg(Some(bar_color));
         for _ in 0..filled {
            buff.set_cell(current_pos, area.y, bar_symbol.clone()); 
            current_pos += 1;

@@ -8,7 +8,10 @@ use std::{
 };
 use crossterm::event::{poll, read, Event, KeyEvent, KeyCode, KeyModifiers};
 use std::time::Duration;
-use crossterm::style::{SetForegroundColor, Print, ResetColor, Color as CrossColor};
+use crossterm::style::{
+    SetForegroundColor, 
+    SetBackgroundColor,
+    Print, ResetColor, Color as CrossColor};
 use crossterm::{cursor, execute, queue};
 use crossterm::cursor::MoveTo;
 use super::app_error::AppError;
@@ -18,7 +21,6 @@ use crate::{
     Layout,
     Alignment,
     TextWidget,
-    EditableTextWidget,
     get_version
 };
 
@@ -27,14 +29,14 @@ use crate::{
 struct WarningRow {
     status: bool,
     message: Rc<RefCell<String>>,
-    ui: Box<EditableTextWidget>
+    ui: Box<TextWidget>
 }
 
 impl WarningRow {
     fn new() -> Self {
         let message = Rc::new(RefCell::new(String::new()));
 
-        let ui = Box::new(EditableTextWidget::new(&message));
+        let ui = Box::new(TextWidget::new_editable(message.clone()));
 
         WarningRow {
             status: false,
@@ -72,7 +74,7 @@ impl App {
         // generate status row
         let version = get_version();
         let status_string = format!("q: exit, ver:{:?}", version);
-        let status_row = TextWidget::new(&status_string);
+        let status_row = TextWidget::new_static(&status_string).set_color(Some(Color::White), Some(Color::Blue));
 
         Ok(App {
             buffer: Buffer::new(width, height),
@@ -139,6 +141,19 @@ impl App {
 
         Ok(())
     }
+    
+
+    fn match_cross_color(color: &Color) -> CrossColor {
+        let new_color = match color {
+            Color::Red => CrossColor::Red,
+            Color::Green => CrossColor::Green,
+            Color::Blue => CrossColor::Blue,
+            Color::White => CrossColor::White,
+            Color::Black => CrossColor::Black,
+            Color::Yellow => CrossColor::DarkYellow
+        };
+        new_color
+    }
 
     fn flush_to_terminal(&mut self) -> crossterm::Result<()> {
         for y in 0..self.buffer.height {
@@ -149,22 +164,19 @@ impl App {
                 queue!(self.stdout, MoveTo(x, y))?;
                 match &cell.fg {
                     Some(color) => {
-                        let fg = match color {
-                            Color::Red => CrossColor::Red,
-                            Color::Green => CrossColor::Green,
-                            Color::Blue => CrossColor::Blue,
-                            Color::White => CrossColor::White,
-                            Color::Black => CrossColor::Black,
-                            Color::Yellow => CrossColor::DarkYellow
-                        };
-                        queue!(
-                            self.stdout, SetForegroundColor(fg),
-                            Print(cell.symbol),
-                            ResetColor
-                        )?
+                        let fg = Self::match_cross_color(&color);
+                        queue!(self.stdout, SetForegroundColor(fg))?;
                     },
-                    None => queue!(self.stdout, Print(cell.symbol))?
+                    None => {}
+                };
+                match &cell.bg {
+                    Some(color) => {
+                        let bg = Self::match_cross_color(&color);
+                        queue!(self.stdout, SetBackgroundColor(bg))?;
+                    },
+                    None => {}
                 }
+                queue!(self.stdout, Print(cell.symbol), ResetColor)?;
             }
         }
 
