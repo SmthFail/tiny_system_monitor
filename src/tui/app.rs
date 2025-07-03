@@ -1,7 +1,11 @@
-use super::buffer::{Buffer, Cell, Color};
+use super::buffer::{Buffer, Color};
 use super::widget::{Widget, Rect};
 use crossterm::terminal;
 use std::io::{stdout, Stdout, Write};
+use std::{
+    rc::Rc,
+    cell::RefCell
+};
 use crossterm::event::{poll, read, Event, KeyEvent, KeyCode, KeyModifiers};
 use std::time::Duration;
 use crossterm::style::{SetForegroundColor, Print, ResetColor, Color as CrossColor};
@@ -9,20 +13,52 @@ use crossterm::{cursor, execute, queue};
 use crossterm::cursor::MoveTo;
 use super::app_error::AppError;
 
-use crate::Container;
-use crate::Layout;
-use crate::Alignment;
-use crate::TextWidget;
+use crate::{
+    Container,
+    Layout,
+    Alignment,
+    TextWidget,
+    EditableTextWidget,
+    get_version
+};
 
-use crate::get_version; 
 
+
+struct WarningRow {
+    status: bool,
+    message: Rc<RefCell<String>>,
+    ui: Box<EditableTextWidget>
+}
+
+impl WarningRow {
+    fn new() -> Self {
+        let message = Rc::new(RefCell::new(String::new()));
+
+        let ui = Box::new(EditableTextWidget::new(&message));
+
+        WarningRow {
+            status: false,
+            message,
+            ui
+        }
+    }
+
+    fn update(&mut self, status: bool, message: String) {
+        self.status = status;
+        *self.message.borrow_mut() = message;
+    }
+
+    fn render(&mut self, buffer: &mut Buffer, area: Rect) -> Result<(), AppError>{
+        self.ui.render(buffer, area)?;
+        Ok(())
+    }
+}
 
 pub struct App {
     pub buffer: Buffer,
-    children: Box<Container>,
+    body: Box<Container>,
     stdout: Stdout,
-    width: u16,
-    height: u16,
+    warning_status: WarningRow,
     status_row: Box<TextWidget>
 }
 
@@ -31,55 +67,77 @@ impl App {
         let (width, height) = terminal::size()
             .map_err(|e| AppError::error(format!("Can't get terminal size {}", e)))?;
 
-        let children = Container::new(None,None, Layout::Vertical, Alignment::Start, false);
+        let body = Container::new(None,None, Layout::Vertical, Alignment::Start, false);
 
         // generate status row
         let version = get_version();
         let status_string = format!("q: exit, ver:{:?}", version);
         let status_row = TextWidget::new(&status_string);
+
         Ok(App {
             buffer: Buffer::new(width, height),
-            children: Box::new(children),
+            body: Box::new(body),
             stdout: stdout(),
-            width,
-            height,
-            status_row: Box::new(status_row)
+            status_row: Box::new(status_row),
+            warning_status: WarningRow::new() 
         })
     }
     
     pub fn add_child(&mut self, child: Box<dyn Widget>) {
-        self.children.add_child(child);
+        self.body.add_child(child);
     }
     
     pub fn update(&mut self) {
-        self.children.update();
+        self.body.update();
         self.status_row.update();
     }
 
-    pub fn resize(&mut self) {
-        self.buffer = Buffer::new(self.width, self.height);
-        // TODO update size of child widget?
+    pub fn resize(&mut self, width: u16, height: u16) {
+        self.buffer = Buffer::new(width, height);
     }
 
-    pub fn render(&mut self) {
-        self.children.render(
+    pub fn render(&mut self) -> Result<(), AppError>{
+        let width = self.buffer.width;
+        let mut body_height = if self.warning_status.status {
+            self.buffer.height - 2
+        } else {
+            self.buffer.height - 1
+        };
+
+        let _ = self.body.render(
             &mut self.buffer,
             Rect {
                x: 0,
                y: 0,
-               width: self.width,
-               height: self.height - 1, 
+               width: width,
+               height: body_height, 
             }
         );
+
+        if self.warning_status.status {
+            let _ = self.warning_status.render(
+                &mut self.buffer,
+                Rect {
+                    x: 0,
+                    y: body_height,
+                    width: width,
+                    height: 1
+                }
+            );
+            body_height += 1;
+        }
+
         self.status_row.render(
             &mut self.buffer,
             Rect {
                 x: 0,
-                y: self.height - 1,
-                width: self.width,
+                y: body_height,
+                width: width,
                 height: 1
             }
-            );
+            )?;
+
+        Ok(())
     }
 
     fn flush_to_terminal(&mut self) -> crossterm::Result<()> {
@@ -123,7 +181,7 @@ impl App {
 
         loop {
             self.update();
-            self.render();
+            self.render()?;
 
             let _ = self.flush_to_terminal();
 
@@ -140,9 +198,7 @@ impl App {
                         break;
                     }
                     Event::Resize(width, height) => {
-                        self.width = width;
-                        self.height = height;
-                        self.resize();
+                        self.resize(width, height);
                     },
                     _ => (),
                 }

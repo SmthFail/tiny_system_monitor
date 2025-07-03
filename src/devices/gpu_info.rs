@@ -6,9 +6,12 @@ use std::cell::RefCell;
 use crate::Buffer;
 use crate::tui::widget::{Widget, Rect};
 use nvml_wrapper::{Nvml, error::NvmlError};
-use crate::tui::container_widget::{Container, Layout, Alignment};
-use crate::tui::progress_bar_widget::ProgressBar;
-use crate::tui::text_widget::TextWidget;
+use crate::tui::{
+    container_widget::{Container, Layout, Alignment},
+    progress_bar_widget::ProgressBar,
+    text_widget::TextWidget,
+    app_error::AppError
+};
 
 use std::ffi::OsStr;
 
@@ -163,8 +166,9 @@ impl GpuInfo{
 
 
 impl Widget for GpuInfo {
-    fn render(&mut self, buf: &mut Buffer, area: Rect) {
-        self.ui.render(buf, area);
+    fn render(&mut self, buf: &mut Buffer, area: Rect) -> Result<(), AppError> {
+        self.ui.render(buf, area)?;
+        Ok(())
     }
 
     fn update(&mut self) {

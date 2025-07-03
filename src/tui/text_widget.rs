@@ -1,5 +1,7 @@
 use super::buffer::{Buffer, Cell, Color};
 use super::widget::{Widget, Rect};
+use super::app_error::AppError;
+
 
 pub struct TextWidget {
     pub text: String,
@@ -16,7 +18,7 @@ impl TextWidget {
 }
 
 impl Widget for TextWidget {
-    fn render(&mut self, buff: &mut Buffer, area: Rect) {
+    fn render(&mut self, buff: &mut Buffer, area: Rect) -> Result<(), AppError>{
         let max_width = area.width as usize;
         let text_bytes = self.text.chars().take(max_width).collect::<Vec<_>>();
 
@@ -28,6 +30,7 @@ impl Widget for TextWidget {
                 buff.set_cell(x, y, cell);
             }
         }
+        Ok(())
     }
 
     fn get_constraints(&self) -> (Option<u16>, Option<u16>) {

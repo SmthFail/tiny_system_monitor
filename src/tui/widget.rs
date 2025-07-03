@@ -1,5 +1,5 @@
 use super::buffer::Buffer;
-
+use super::app_error::AppError;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Rect {
@@ -10,7 +10,7 @@ pub struct Rect {
 }
 
 pub trait Widget {
-    fn render(&mut self, buf: &mut Buffer, area: Rect);
+    fn render(&mut self, buf: &mut Buffer, area: Rect) -> Result<(), AppError>;
 
     fn get_constraints(&self) -> (Option<u16>, Option<u16>);
 

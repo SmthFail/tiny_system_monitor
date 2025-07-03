@@ -2,11 +2,15 @@ use sysinfo::System;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::tui::container_widget::{Container, Layout, Alignment};
-use crate::tui::progress_bar_widget::ProgressBar;
-use crate::tui::text_widget::TextWidget;
+use crate::tui::{
+    container_widget::{Container, Layout, Alignment},
+    progress_bar_widget::ProgressBar,
+    text_widget::TextWidget,
+    app_error::AppError
+};
 use crate::Buffer;
 use crate::tui::widget::{Widget, Rect};
+
 
 pub struct CpuInfo {
     sys: System,
@@ -86,8 +90,9 @@ impl CpuInfo {
 }
 
 impl Widget for CpuInfo {
-    fn render(&mut self, buf: &mut Buffer, area: Rect) {
-        self.ui.render(buf, area);
+    fn render(&mut self, buf: &mut Buffer, area: Rect) -> Result<(), AppError> {
+        self.ui.render(buf, area)?;
+        Ok(())
     }
 
     fn update(&mut self) {

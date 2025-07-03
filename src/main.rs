@@ -8,6 +8,7 @@ mod tui;
 use tui::app::App;
 use tui::container_widget::{Container, Alignment, Layout};
 use tui::text_widget::TextWidget;
+use tui::editable_text_widget::EditableTextWidget;
 use crate::tui::buffer::Buffer;
 use utils::version_checker::get_version;
 

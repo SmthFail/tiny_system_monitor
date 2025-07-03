@@ -1,5 +1,8 @@
-use super::widget::{Widget, Rect};
-use super::buffer::{Buffer, Cell};
+use super::{
+    widget::{Widget, Rect},
+    buffer::{Buffer, Cell},
+    app_error::AppError
+};
 
 
 pub enum Layout {
@@ -77,7 +80,7 @@ impl Container {
        }
     }
 
-    fn _draw_vertical(&mut self, inner: Rect, buff: &mut Buffer, childs_size: Vec<(u16, u16)>) {
+    fn _draw_vertical(&mut self, inner: Rect, buff: &mut Buffer, childs_size: Vec<(u16, u16)>) -> Result<(), AppError>{
         let mut current_row = inner.y;
         for (i, child) in self.children.iter_mut().enumerate() {
             let child_rect = Rect {
@@ -86,12 +89,13 @@ impl Container {
                 width: inner.width,
                 height: childs_size[i].1
             };
-            child.render(buff, child_rect);
+            child.render(buff, child_rect)?;
             current_row += child_rect.height;
         }
+        Ok(())
     }
 
-    fn _draw_horizontal(&mut self, inner: Rect, buff: &mut Buffer, childs_size: Vec<(u16, u16)>) {
+    fn _draw_horizontal(&mut self, inner: Rect, buff: &mut Buffer, childs_size: Vec<(u16, u16)>) -> Result<(), AppError>{
         let mut current_col = inner.x;
         for (i, child) in self.children.iter_mut().enumerate() {
             let child_rect = Rect {
@@ -100,9 +104,10 @@ impl Container {
                 width: childs_size[i].0,
                 height: inner.height
             };
-            child.render(buff, child_rect);
+            child.render(buff, child_rect)?;
             current_col += child_rect.width;
         }
+        Ok(())
     }
 
 
@@ -168,7 +173,7 @@ impl Container {
 
 impl Widget for Container {
 
-     fn render(&mut self, buff: &mut Buffer, area: Rect) {
+     fn render(&mut self, buff: &mut Buffer, area: Rect) -> Result<(), AppError>{
        let border_size = if self.border {
           1 
        } else {
@@ -181,7 +186,7 @@ impl Widget for Container {
         
        // check that it at least 1 row inside widget
        if area.width <= 1 + border_size {
-           return
+           return Err(AppError::warning("Overflowed"))
        } 
        
        // inner area for children
@@ -193,26 +198,26 @@ impl Widget for Container {
        };
 
        if inner.width == 0 || inner.height == 0 {
-           return;
+           return Err(AppError::warning("Some size of container is 0"));
        }
 
        // draw children
        let num_children = self.children.len();
        if num_children == 0 {
-           return;
+           return Ok(());
        }
 
        let childs_size = match self.calculate_childs_size(inner) {
            Some(size) => size,
-           None => return
+           None => return Ok(())
        };
 
        match self.layout {
            Layout::Vertical => {
-              self._draw_vertical(inner, buff, childs_size);
+              self._draw_vertical(inner, buff, childs_size)?;
            }
            Layout::Horizontal => {
-              self._draw_horizontal(inner, buff, childs_size);
+              self._draw_horizontal(inner, buff, childs_size)?;
            }
            Layout::Grid { rows, columns } => {
                 let cell_width = inner.width / columns;
@@ -232,13 +237,14 @@ impl Widget for Container {
                             height: cell_heigth
                         };
 
-                        self.children[child_index].render(buff, child_rect);
+                        self.children[child_index].render(buff, child_rect)?;
                         child_index += 1
                     }
                 }
            }
        }
-       
+      
+       Ok(())
     }
 
     fn get_constraints(&self) -> (Option<u16>, Option<u16>) {

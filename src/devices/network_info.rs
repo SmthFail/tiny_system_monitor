@@ -9,6 +9,8 @@ use crate::tui::editable_text_widget::EditableTextWidget;
 use crate::TextWidget;
 use crate::Buffer;
 
+use crate::tui::app_error::AppError;
+
 
 
 pub struct NetworkInfo {
@@ -116,8 +118,9 @@ impl NetworkInfo {
 
 
 impl Widget for NetworkInfo {
-    fn render(&mut self, buf: &mut Buffer, area: Rect) {
-        self.ui.render(buf, area);
+    fn render(&mut self, buf: &mut Buffer, area: Rect) -> Result<(), AppError> {
+        self.ui.render(buf, area)?;
+        Ok(())
     }
 
     fn update(&mut self) {

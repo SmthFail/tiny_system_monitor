@@ -1,5 +1,8 @@
 use super::widget::{Widget, Rect};
-use super::buffer::{Buffer, Cell as buffCell, Color};
+use super::{
+    buffer::{Buffer, Cell as buffCell, Color},
+    app_error::AppError
+};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -26,7 +29,7 @@ impl ProgressBar {
 }
 
 impl Widget for ProgressBar {
-    fn render(&mut self, buff: &mut Buffer, area: Rect) {
+    fn render(&mut self, buff: &mut Buffer, area: Rect) -> Result<(), AppError>{
         // process data 
         let total = (*self.total_value.borrow()).max(1.0);
         let progress = (*self.current_value.borrow() / total).clamp(0.0, 1.0);
@@ -48,7 +51,7 @@ impl Widget for ProgressBar {
             for (i, ch) in self.title.chars().take(area.width as usize).enumerate() {
                 buff.set_cell(area.x + i as u16, area.y, buffCell::new(ch));
             }
-            return;
+            return Err(AppError::warning("Overflowed"));
         } 
 
 
@@ -94,6 +97,8 @@ impl Widget for ProgressBar {
         }
 
         buff.set_cell(current_pos, area.y, buffCell::new(']'));
+
+        Ok(())
     }
 
     fn get_constraints(&self) -> (Option<u16>, Option<u16>) {

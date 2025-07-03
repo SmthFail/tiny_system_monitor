@@ -1,5 +1,8 @@
 use super::buffer::{Buffer, Cell, Color};
-use super::widget::{Widget, Rect};
+use super::{
+    widget::{Widget, Rect},
+    app_error::AppError
+};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -18,7 +21,7 @@ impl EditableTextWidget {
 }
 
 impl Widget for EditableTextWidget {
-    fn render(&mut self, buff: &mut Buffer, area: Rect) {
+    fn render(&mut self, buff: &mut Buffer, area: Rect) -> Result<(), AppError>{
         let max_width = area.width as usize;
         let text_bytes = self.text.borrow_mut().chars().take(max_width).collect::<Vec<_>>();
 
@@ -40,6 +43,7 @@ impl Widget for EditableTextWidget {
                 buff.set_cell(area.x + i as u16, area.y, cell)
             }
         }
+        Ok(())
     }
 
     fn get_constraints(&self) -> (Option<u16>, Option<u16>) {
