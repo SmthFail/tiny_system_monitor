@@ -27,7 +27,7 @@ use crate::{
 
 
 struct WarningRow {
-    status: bool,
+    is_error: bool,
     message: Rc<RefCell<String>>,
     ui: Box<TextWidget>
 }
@@ -35,24 +35,31 @@ struct WarningRow {
 impl WarningRow {
     fn new() -> Self {
         let message = Rc::new(RefCell::new(String::new()));
-
-        let ui = Box::new(TextWidget::new_editable(message.clone()));
+        
+        let row = TextWidget::new_editable(message.clone())
+            .set_color(Some(Color::White), Some(Color::Yellow));
+        let ui = Box::new(row);
 
         WarningRow {
-            status: false,
+            is_error: false,
             message,
             ui
         }
     }
 
-    fn update(&mut self, status: bool, message: String) {
-        self.status = status;
+    fn update(&mut self, is_error: bool, message: String) {
+        self.is_error = is_error;
         *self.message.borrow_mut() = message;
     }
 
     fn render(&mut self, buffer: &mut Buffer, area: Rect) -> Result<(), AppError>{
         self.ui.render(buffer, area)?;
         Ok(())
+    }
+
+    fn clear(&mut self) {
+        self.is_error = false;
+        *self.message.borrow_mut() = String::new();
     }
 }
 
@@ -100,13 +107,13 @@ impl App {
 
     pub fn render(&mut self) -> Result<(), AppError>{
         let width = self.buffer.width;
-        let mut body_height = if self.warning_status.status {
+        let mut body_height = if self.warning_status.is_error {
             self.buffer.height - 2
         } else {
             self.buffer.height - 1
         };
 
-        let _ = self.body.render(
+        let body_render =  self.body.render(
             &mut self.buffer,
             Rect {
                x: 0,
@@ -115,8 +122,16 @@ impl App {
                height: body_height, 
             }
         );
+        match body_render {
+            Ok(_) => {
+                self.warning_status.clear();
+            },
+            Err(value) => {
+                self.warning_status.update(true, value.message);
+            }
+        }
 
-        if self.warning_status.status {
+        if self.warning_status.is_error {
             let _ = self.warning_status.render(
                 &mut self.buffer,
                 Rect {
