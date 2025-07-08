@@ -82,9 +82,11 @@ impl Container {
 
     fn _draw_vertical(&mut self, inner: Rect, buff: &mut Buffer, childs_size: Vec<(u16, u16)>) -> Result<(), AppError>{
         let mut current_height = 0;
+        let mut is_child_error: Result<(), AppError> = Ok(());
         for (i, child) in self.children.iter_mut().enumerate() {
             if current_height + childs_size[i].1 > inner.height {
-                return Err(AppError::warning("Overflowed"));
+                is_child_error = Err(AppError::warning("Overflowed"));
+                continue;
             }
             let child_rect = Rect {
                 x: inner.x,
@@ -92,14 +94,16 @@ impl Container {
                 width: inner.width,
                 height: childs_size[i].1
             };
-            child.render(buff, child_rect)?;
+            child.render(buff, child_rect)
+                .unwrap_or_else(|e| is_child_error = Err(e));
             current_height += child_rect.height;
         }
-        Ok(())
+        is_child_error 
     }
 
     fn _draw_horizontal(&mut self, inner: Rect, buff: &mut Buffer, childs_size: Vec<(u16, u16)>) -> Result<(), AppError>{
         let mut current_col = inner.x;
+        let mut is_child_error: Result<(), AppError> = Ok(());
         for (i, child) in self.children.iter_mut().enumerate() {
             let child_rect = Rect {
                 x: current_col,
@@ -107,10 +111,11 @@ impl Container {
                 width: childs_size[i].0,
                 height: inner.height
             };
-            child.render(buff, child_rect)?;
+            child.render(buff, child_rect)
+                .unwrap_or_else(|e| is_child_error = Err(e));
             current_col += child_rect.width;
         }
-        Ok(())
+        is_child_error
     }
 
 
