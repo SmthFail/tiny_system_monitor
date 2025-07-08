@@ -81,16 +81,19 @@ impl Container {
     }
 
     fn _draw_vertical(&mut self, inner: Rect, buff: &mut Buffer, childs_size: Vec<(u16, u16)>) -> Result<(), AppError>{
-        let mut current_row = inner.y;
+        let mut current_height = 0;
         for (i, child) in self.children.iter_mut().enumerate() {
+            if current_height + childs_size[i].1 > inner.height {
+                return Err(AppError::warning("Overflowed"));
+            }
             let child_rect = Rect {
                 x: inner.x,
-                y: current_row,
+                y: inner.y + current_height,
                 width: inner.width,
                 height: childs_size[i].1
             };
             child.render(buff, child_rect)?;
-            current_row += child_rect.height;
+            current_height += child_rect.height;
         }
         Ok(())
     }
@@ -174,45 +177,46 @@ impl Container {
 impl Widget for Container {
 
      fn render(&mut self, buff: &mut Buffer, area: Rect) -> Result<(), AppError>{
-       let border_size = if self.border {
-          1 
-       } else {
-          0
-       };
+        // Check for at least 1 column and row exist 
+        if self.border {
+            if area.width < 3 || area.height < 3 {
+                return Err(AppError::warning("Overflowed"))
+            }
+        } else {
+            if area.width < 1 || area.height < 1 {
+                return Err(AppError::warning("Overflowed"))
+            }
+        }
 
-       if self.border {
-           self.draw_border(buff, area)
-       }
+        // Calculate draw rectangle for childs. Draw border if needed
+        let inner = if self.border {
+            self.draw_border(buff, area);
+            Rect {
+                x: area.x + 1,
+                y: area.y + 1,
+                width: area.width - 2,
+                height: area.height - 2
+            }
+        } else {
+            Rect {
+                x: area.x,
+                y: area.y,
+                width: area.width,
+                height: area.height
+            }
+        };
         
-       // check that it at least 1 row inside widget
-       if area.width <= 1 + border_size {
-           return Err(AppError::warning("Overflowed"))
-       } 
-       
-       // inner area for children
-       let inner = Rect {
-           x: area.x + border_size,
-           y: area.y + border_size,
-           width: area.width - 2 * border_size,
-           height: area.height - 2 * border_size
-       };
-
-       if inner.width == 0 || inner.height == 0 {
-           return Err(AppError::warning("Some size of container is 0"));
-       }
-
-       // draw children
-       let num_children = self.children.len();
-       if num_children == 0 {
+        // Draw children
+        if self.children.len() == 0 {
            return Ok(());
-       }
+        }
 
-       let childs_size = match self.calculate_childs_size(inner) {
+        let childs_size = match self.calculate_childs_size(inner) {
            Some(size) => size,
            None => return Ok(())
-       };
+        };
 
-       match self.layout {
+        match self.layout {
            Layout::Vertical => {
               self._draw_vertical(inner, buff, childs_size)?;
            }
@@ -226,7 +230,7 @@ impl Widget for Container {
 
                 for row in 0..rows {
                     for col in 0..columns {
-                        if child_index >= num_children {
+                        if child_index >= self.children.len() {
                             break;
                         }
 
@@ -251,9 +255,10 @@ impl Widget for Container {
         (self.width, self.height)
     }
 
-    fn update(&mut self) {
+    fn update(&mut self) -> Result<(), AppError>{
         for child in &mut self.children {
-            child.update();
+            child.update()?;
         }
+        Ok(())
     }
 }

@@ -95,9 +95,10 @@ impl Widget for CpuInfo {
         Ok(())
     }
 
-    fn update(&mut self) {
+    fn update(&mut self) -> Result<(), AppError> {
         self.update_data();
-        self.ui.update()
+        self.ui.update()?;
+        Ok(())
     }
 
     fn get_constraints(&self) -> (Option<u16>, Option<u16>) {

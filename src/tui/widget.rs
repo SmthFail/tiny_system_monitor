@@ -14,5 +14,5 @@ pub trait Widget {
 
     fn get_constraints(&self) -> (Option<u16>, Option<u16>);
 
-    fn update(&mut self);
+    fn update(&mut self) -> Result<(), AppError>;
 }

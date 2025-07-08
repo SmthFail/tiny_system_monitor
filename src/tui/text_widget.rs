@@ -88,7 +88,7 @@ impl Widget for TextWidget {
         (Some(width as u16), Some(1))
     }
 
-    fn update(&mut self) {
-
+    fn update(&mut self) -> Result<(), AppError>{
+        Ok(())
     }
 }

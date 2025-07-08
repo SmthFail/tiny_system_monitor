@@ -171,9 +171,10 @@ impl Widget for GpuInfo {
         Ok(())
     }
 
-    fn update(&mut self) {
+    fn update(&mut self) -> Result<(), AppError>{
         self.update();
-        self.ui.update()
+        self.ui.update()?;
+        Ok(())
     }
 
     fn get_constraints(&self) -> (Option<u16>, Option<u16>) {
