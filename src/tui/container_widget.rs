@@ -8,7 +8,7 @@ use super::{
 pub enum Layout {
     Vertical,
     Horizontal,
-    Grid { rows: u16, columns: u16 },
+    Grid,  
 }
 
 pub enum Alignment {
@@ -79,6 +79,58 @@ impl Container {
             }
        }
     }
+
+    fn make_columns(heights: &[u16], max_height: u16) -> Vec<Vec<usize>> {
+        let mut columns: Vec<Vec<usize>> = vec![Vec::new()];
+        let mut current_height: u16 = 0;
+
+        for (idx, &h) in heights.iter().enumerate() {
+            // TODO check if child height > max_height and return overflowed
+            if !columns.last().unwrap().is_empty() && current_height + h > max_height {
+                columns.push(Vec::new());
+                current_height = 0;
+            }
+
+            columns.last_mut().unwrap().push(idx);
+            current_height += h;
+        }
+        columns
+    }
+
+    fn _draw_grid(&mut self, inner: Rect, buff: &mut Buffer) -> Result<(), AppError>{
+        let child_sizes = match self.calculate_childs_size(inner) {
+            Some(size) => size,
+            None => return Ok(())
+        };
+        
+        let heights: Vec<u16> = child_sizes.iter().map(|&(_, h)| h).collect();
+
+        let columns = Self::make_columns(&heights, inner.height);
+
+        let n_cols = columns.len() as u16;
+        let base_w = inner.width / n_cols;
+        let extra = inner.width % n_cols;
+
+        if base_w == 0 {
+            return Err(AppError::warning("Base w is 0"));
+        }
+
+        let mut x = inner.x;
+        for (i, col) in columns.into_iter().enumerate() {
+            let w = base_w + if (i as u16) < extra {1} else {0};
+            let mut y = inner.y;
+            for idx in col {
+                let h = child_sizes[idx].1;
+                let rect = Rect {x, y, width: w, height: h};
+                self.children[idx].render(buff, rect)?;
+                y += h;
+            }
+            x += w;
+        }
+        Ok(())
+        
+    }
+
 
     fn _draw_vertical(&mut self, inner: Rect, buff: &mut Buffer, childs_size: Vec<(u16, u16)>) -> Result<(), AppError>{
         let mut current_height = 0;
@@ -228,28 +280,8 @@ impl Widget for Container {
            Layout::Horizontal => {
               self._draw_horizontal(inner, buff, childs_size)?;
            }
-           Layout::Grid { rows, columns } => {
-                let cell_width = inner.width / columns;
-                let cell_heigth = inner.height / rows;
-                let mut child_index = 0;
-
-                for row in 0..rows {
-                    for col in 0..columns {
-                        if child_index >= self.children.len() {
-                            break;
-                        }
-
-                        let child_rect = Rect {
-                            x: inner.x + col * cell_width,
-                            y: inner.y + row * cell_heigth,
-                            width: cell_width,
-                            height: cell_heigth
-                        };
-
-                        self.children[child_index].render(buff, child_rect)?;
-                        child_index += 1
-                    }
-                }
+           Layout::Grid => {
+              self._draw_grid(inner, buff)?;
            }
        }
       

@@ -113,6 +113,8 @@ impl GpuInfo{
 
         ui.add_child(Box::new(TextWidget::new_static("Gpu info")));
 
+        let mut gpus_container = Container::new(None, None, Layout::Grid, Alignment::Start, false);
+
         for gpu in gpus.iter() {
             // set height to 4 untill implement auto size of container
             let mut gpu_container = Container::new(None, Some(4), Layout::Vertical, Alignment::Start, false);
@@ -126,8 +128,10 @@ impl GpuInfo{
             gpu_container.add_child(Box::new(ProgressBar::new(
                 "RAM", "%", &gpu.utilization_rate, &total_gpu, true)
             ));
-            ui.add_child(Box::new(gpu_container));
+            gpus_container.add_child(Box::new(gpu_container));
         }
+
+        ui.add_child(Box::new(gpus_container));
         
         GpuInfo {
             nvml, 

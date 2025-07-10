@@ -40,8 +40,12 @@ impl CpuInfo {
       
         // create ui 
         let mut ui = Container::new(None, None, Layout::Vertical, Alignment::Start, true);
-
+        
+        // title
         ui.add_child(Box::new(TextWidget::new_static("Cpu info")));
+
+        // cpus container
+        let mut cpus_container = Container::new(None, None, Layout::Grid, Alignment::Start, false);
         
         let total_progress = Rc::new(RefCell::new(100.0));
         for (i, cpu_usage) in cpus_usage.iter().enumerate() {
@@ -51,9 +55,11 @@ impl CpuInfo {
                 &cpu_usage,
                 &total_progress,
                 true);
-            ui.add_child(Box::new(cpu_progress));
+            cpus_container.add_child(Box::new(cpu_progress));
         }
+        ui.add_child(Box::new(cpus_container));
 
+        // ram and swap
         let ram_progress = ProgressBar::new("RAM", "GB", &ram_used, &ram_total, false);
         let swap_progress = ProgressBar::new("SWP", "GB", &swap_used, &swap_total, false);
 
