@@ -9,7 +9,7 @@ use crate::tui::{
     app_error::AppError
 };
 use crate::Buffer;
-use crate::tui::widget::{Widget, Rect};
+use crate::tui::widget::{Widget, Rect, ChildConstraints};
 
 
 pub struct CpuInfo {
@@ -107,7 +107,12 @@ impl Widget for CpuInfo {
         Ok(())
     }
 
-    fn get_constraints(&self) -> (Option<u16>, Option<u16>) {
-        (None, None)
+    fn get_constraints(&self) -> ChildConstraints {
+       ChildConstraints {
+           min_width: None,
+           max_width: None,
+           min_height: None,
+           max_height: None
+       } 
     }
 }

@@ -1,5 +1,5 @@
 use super::buffer::{Buffer, Cell, Color};
-use super::widget::{Widget, Rect};
+use super::widget::{Widget, Rect, ChildConstraints};
 use super::app_error::AppError;
 use std::{
     rc::Rc,
@@ -80,12 +80,17 @@ impl Widget for TextWidget {
         Ok(())
     }
 
-    fn get_constraints(&self) -> (Option<u16>, Option<u16>) {
+    fn get_constraints(&self) -> ChildConstraints {
         let width = match &self.text {
             TextSource::Static(s) => s.len(),
             TextSource::Editable(s) => s.borrow().len()
         };
-        (Some(width as u16), Some(1))
+        ChildConstraints{
+            min_width: None,
+            max_width: Some(width as u16),
+            min_height: Some(1),
+            max_height: Some(1)
+        }
     }
 
     fn update(&mut self) -> Result<(), AppError>{

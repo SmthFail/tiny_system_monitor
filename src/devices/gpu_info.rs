@@ -4,7 +4,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 use crate::Buffer;
-use crate::tui::widget::{Widget, Rect};
+use crate::tui::widget::{Widget, Rect, ChildConstraints};
 use nvml_wrapper::{Nvml, error::NvmlError};
 use crate::tui::{
     container_widget::{Container, Layout, Alignment},
@@ -181,7 +181,12 @@ impl Widget for GpuInfo {
         Ok(())
     }
 
-    fn get_constraints(&self) -> (Option<u16>, Option<u16>) {
-        (None, None)
+    fn get_constraints(&self) -> ChildConstraints {
+       ChildConstraints {
+           min_width: None,
+           max_width: None,
+           min_height: None,
+           max_height: None
+       } 
     }
 }

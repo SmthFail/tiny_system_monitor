@@ -9,10 +9,18 @@ pub struct Rect {
     pub height: u16,
 }
 
+#[derive(Clone)]
+pub struct ChildConstraints {
+    pub min_width: Option<u16>,
+    pub max_width: Option<u16>,
+    pub min_height: Option<u16>,
+    pub max_height: Option<u16>
+}
+
 pub trait Widget {
     fn render(&mut self, buf: &mut Buffer, area: Rect) -> Result<(), AppError>;
 
-    fn get_constraints(&self) -> (Option<u16>, Option<u16>);
+    fn get_constraints(&self) -> ChildConstraints;
 
     fn update(&mut self) -> Result<(), AppError>;
 }

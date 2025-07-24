@@ -1,4 +1,4 @@
-use super::widget::{Widget, Rect};
+use super::widget::{Widget, Rect, ChildConstraints};
 use super::{
     buffer::{Buffer, Cell as buffCell, Color},
     app_error::AppError
@@ -101,8 +101,14 @@ impl Widget for ProgressBar {
         Ok(())
     }
 
-    fn get_constraints(&self) -> (Option<u16>, Option<u16>) {
-        (Some(1), Some(1))
+    fn get_constraints(&self) -> ChildConstraints {
+       // TODO check properly 
+       ChildConstraints {
+            min_width: None,
+            max_width: None,
+            min_height: Some(1),
+            max_height: Some(1)
+       }
     }
 
     fn update(&mut self) -> Result<(), AppError> {

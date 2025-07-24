@@ -1,5 +1,5 @@
 use super::{
-    widget::{Widget, Rect},
+    widget::{Widget, Rect, ChildConstraints},
     buffer::{Buffer, Cell},
     app_error::AppError
 };
@@ -183,9 +183,11 @@ impl Container {
         
 
        let mut childs_size: Vec<(u16, u16)> = self.children.iter().map(|child|{
-           let (w_opt, h_opt) = child.get_constraints();
-           let w = w_opt.unwrap_or(0);
-           let h = h_opt.unwrap_or(0);
+           let constraints = child.get_constraints();
+          
+           // TODO correct check
+           let w = constraints.max_width.unwrap_or(0);
+           let h = constraints.max_height.unwrap_or(0);
 
            if w == 0 {
               flex_horizontal_count += 1; 
@@ -288,8 +290,13 @@ impl Widget for Container {
        Ok(())
     }
 
-    fn get_constraints(&self) -> (Option<u16>, Option<u16>) {
-        (self.width, self.height)
+    fn get_constraints(&self) -> ChildConstraints {
+        ChildConstraints {
+            min_width: self.width,
+            max_width: self.width,
+            min_height: self.height,
+            max_height: self.height 
+        }
     }
 
     fn update(&mut self) -> Result<(), AppError>{

@@ -2,7 +2,7 @@ use sysinfo::{System, Networks};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::tui::widget::{Widget, Rect};
+use crate::tui::widget::{Widget, Rect, ChildConstraints};
 use std::time::Instant;
 use crate::tui::container_widget::{Container, Layout, Alignment};
 use crate::TextWidget;
@@ -19,7 +19,7 @@ pub struct NetworkInfo {
     previous_rx: u64,
     previous_tx: u64,
     rate_string: Rc<RefCell<String>>,
-    constraints: (Option<u16>, Option<u16>),
+    constraints: ChildConstraints,
     ui: Box<dyn Widget>
 }
 
@@ -38,12 +38,19 @@ impl NetworkInfo {
         }
 
         //calculate constraints
-        let constraints = if border {
-            (None, Some(4)) // 2 - border, 1 label, 1 rate string. Mb TODO further
+        
+        let height = if border {
+            Some(4)
         } else {
-            (None, Some(2)) 
+            Some(2)
         };
 
+        let constraints = ChildConstraints {
+            min_width: None,
+            max_width: None,
+            min_height: height,
+            max_height: height
+        };
 
         //create ui
         let mut ui = Container::new(None, None, Layout::Vertical, Alignment::Start, border);
@@ -128,8 +135,8 @@ impl Widget for NetworkInfo {
         Ok(())
     }
 
-    fn get_constraints(&self) -> (Option<u16>, Option<u16>) {
-       self.constraints 
+    fn get_constraints(&self) -> ChildConstraints {
+       self.constraints.clone() // TODO
     }
 }
 
