@@ -6,6 +6,7 @@ use std::cell::RefCell;
 use crate::Buffer;
 use crate::tui::widget::{Widget, Rect, ChildConstraints};
 use nvml_wrapper::{Nvml, error::NvmlError};
+use nvml_wrapper::enum_wrappers::device::PcieUtilCounter;
 use crate::tui::{
     container_widget::{Container, Layout, Alignment},
     progress_bar_widget::ProgressBar,
@@ -21,13 +22,15 @@ struct Gpu{
     memory_used: Rc<RefCell<f64>>,
     memory_total: Rc<RefCell<f64>>,
     utilization_rate: Rc<RefCell<f64>>,
-    temperature: Rc<RefCell<f64>>,
+    temperature: f64,
+    param_string: Rc<RefCell<String>>
 }
 
 impl Gpu {
     fn new(index: u32, nvml: &Nvml) -> Self {
         let device = nvml.device_by_index(index).unwrap();
         let name: String = device.name().expect("Can't read GPU device name");
+        
         let capability = match device.cuda_compute_capability() {
             Ok(compute_capability) => {
                 format!("{}.{}", compute_capability.major, compute_capability.minor)
@@ -47,6 +50,20 @@ impl Gpu {
             Err(_err) => panic!("{}", _err),
         };
 
+        let tx = match device.pcie_throughput(PcieUtilCounter::Send) {
+            Ok(tx) => tx,
+            Err(_err) => panic!("{}", _err)
+        };
+
+        let rx = match device.pcie_throughput(PcieUtilCounter::Receive) {
+            Ok(rx) => rx,
+            Err(_err) => panic!("{}", _err)
+        };
+
+        let param_string = Rc::new(RefCell::new(
+                format!("T:{}℃ , Rx: {} KB/s, Tx: {}KB/s", temperature, rx, tx)
+        ));
+
         let utilization_rate = match device.utilization_rates() {
             Ok(utilization_rates) => Rc::new(RefCell::new(utilization_rates.gpu as f64)),
             Err(_err) => panic!("{}", _err),
@@ -58,20 +75,17 @@ impl Gpu {
         Gpu {
             index, 
             gpu_info,
-            temperature: Rc::new(RefCell::new(temperature)),
+            temperature,
             memory_used: Rc::new(RefCell::new(memory_used)),
             memory_total: Rc::new(RefCell::new(memory_total)),
-            utilization_rate
+            utilization_rate,
+            param_string
         }
     }
 
     fn update(&mut self, nvml: &Nvml) {
         let device = nvml.device_by_index(self.index).unwrap();
-        *self.temperature.borrow_mut() = match device.temperature(TemperatureSensor::Gpu) {
-            Ok(temperature) => temperature as f64,
-            Err(_err) => panic!("Can't read temperature"),
-        };
-
+       
         *self.memory_used.borrow_mut() = match device.memory_info() {
             Ok(memory_info) => memory_info.used as f64 / 1024.0 / 1024.0 / 1024.0,
             Err(_err) => panic!("{}", _err),
@@ -81,7 +95,25 @@ impl Gpu {
             Ok(utilization_rates) => utilization_rates.gpu as f64,
             Err(_err) => panic!("{}", _err),
         };
+       
+        self.temperature = match device.temperature(TemperatureSensor::Gpu) {
+            Ok(temperature) => temperature as f64,
+            Err(_err) => panic!("Can't read temperature"),
+        };
+ 
+        let rx = match device.pcie_throughput(PcieUtilCounter::Receive) {
+            Ok(rx) => rx as f64,
+            Err(_err) => panic!("{}", _err),
+        };
 
+        let tx = match device.pcie_throughput(PcieUtilCounter::Send) {
+            Ok(tx) => tx as f64,
+            Err(_err) => panic!("{}", _err),
+        };
+
+        *self.param_string.borrow_mut() = format!(
+            "T:{}℃ , Rx: {} KB/s, Tx: {}KB/s", self.temperature, rx, tx
+        );
     }
 }
 
@@ -116,10 +148,12 @@ impl GpuInfo{
         let mut gpus_container = Container::new(None, None, Layout::Grid, Alignment::Start, false);
 
         for gpu in gpus.iter() {
-            // set height to 4 untill implement auto size of container
-            let mut gpu_container = Container::new(None, Some(4), Layout::Vertical, Alignment::Start, false);
-            let info_string = format!("{}, T: {}℃ ", &gpu.gpu_info, &gpu.temperature.borrow());
-            gpu_container.add_child(Box::new(TextWidget::new_static(&info_string)));
+            // set height to 5(with 1 space) untill implement auto size of container
+            let mut gpu_container = Container::new(None, Some(5), Layout::Vertical, Alignment::Start, false);
+            
+            let info_string = &format!("{}", &gpu.gpu_info);
+            gpu_container.add_child(Box::new(TextWidget::new_static(info_string)));
+            gpu_container.add_child(Box::new(TextWidget::new_editable(gpu.param_string.clone())));
             gpu_container.add_child(Box::new(ProgressBar::new(
                 "GPU", "GB", &gpu.memory_used, &gpu.memory_total, false) 
             ));
