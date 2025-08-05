@@ -1,5 +1,3 @@
-mod app_config;
-mod file_config;
 mod utils;
 mod devices;
 use crate::devices::{cpu_info, gpu_info, network_info};
