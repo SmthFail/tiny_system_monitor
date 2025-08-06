@@ -1,5 +1,5 @@
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Color {
     Red,
     Green,
@@ -9,7 +9,7 @@ pub enum Color {
     Yellow
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Cell {
     pub symbol: char,
     pub fg: Option<Color>,

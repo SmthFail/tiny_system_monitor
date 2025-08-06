@@ -1,4 +1,4 @@
-use sysinfo::{System, Networks};
+use sysinfo::Networks;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -13,7 +13,6 @@ use crate::tui::app_error::AppError;
 
 
 pub struct NetworkInfo {
-    sys: System,
     networks: Networks,
     previous_time: Instant,
     previous_rx: u64,
@@ -25,7 +24,6 @@ pub struct NetworkInfo {
 
 impl NetworkInfo {
     pub fn new(border: bool) -> Self {
-        let sys = System::new();
         let networks = Networks::new_with_refreshed_list();
         let previous_time = Instant::now();
         
@@ -61,7 +59,6 @@ impl NetworkInfo {
         ui.add_child(Box::new(TextWidget::new_editable(rate_string.clone())));
 
         NetworkInfo {
-            sys,
             networks,
             previous_time,
             previous_rx,

@@ -9,17 +9,6 @@ use tui::text_widget::TextWidget;
 use crate::tui::buffer::Buffer;
 use utils::version_checker::get_version;
 
-
-fn print_usage_message() {
-    println!("Usage: ");
-    println!("tsm  [Options]");
-    println!("Options:");
-    println!("  <config_name>   Read config with the given name. Config must be placed in ~/.config/tsm/<config_name>.json");
-    println!("  -h, --help      Print help message")
-}
-
-
-
 fn main() {
     
     let mut app = App::new().unwrap_or_else(|e| {

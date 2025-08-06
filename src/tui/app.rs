@@ -15,6 +15,7 @@ use crossterm::style::{
 use crossterm::{cursor, execute, queue};
 use crossterm::cursor::MoveTo;
 use super::app_error::AppError;
+use crossterm::terminal::{Clear, ClearType};
 
 use crate::{
     Container,
@@ -65,6 +66,7 @@ impl WarningRow {
 
 pub struct App {
     pub buffer: Buffer,
+    prev_buffer: Buffer,
     body: Box<Container>,
     stdout: Stdout,
     warning_status: WarningRow,
@@ -75,7 +77,6 @@ impl App {
     pub fn new() -> Result<Self, AppError> {
         let (width, height) = terminal::size()
             .map_err(|e| AppError::error(format!("Can't get terminal size {}", e)))?;
-
         let body = Container::new(None,None, Layout::Vertical, Alignment::Start, false);
 
         // generate status row
@@ -85,6 +86,7 @@ impl App {
 
         Ok(App {
             buffer: Buffer::new(width, height),
+            prev_buffer: Buffer::new(width, height),
             body: Box::new(body),
             stdout: stdout(),
             status_row: Box::new(status_row),
@@ -96,13 +98,16 @@ impl App {
         self.body.add_child(child);
     }
     
-    pub fn update(&mut self) {
-        self.body.update();
-        self.status_row.update();
+    pub fn update(&mut self) -> Result<(), AppError> {
+        self.body.update()?;
+        self.status_row.update()?;
+        Ok(())
     }
 
     pub fn resize(&mut self, width: u16, height: u16) {
         self.buffer = Buffer::new(width, height);
+        self.prev_buffer = Buffer::new(width, height);
+        let _ = execute!(self.stdout, ResetColor, Clear(ClearType::All), MoveTo(0, 0));
     }
 
     pub fn render(&mut self) -> Result<(), AppError>{
@@ -171,27 +176,45 @@ impl App {
     }
 
     fn flush_to_terminal(&mut self) -> crossterm::Result<()> {
+        queue!(self.stdout, ResetColor)?;
+        let mut cur_fg: Option<Color> = None;
+        let mut cur_bg: Option<Color> = None;
+
         for y in 0..self.buffer.height {
             for x in 0..self.buffer.width {
                 let idx = (y as usize) * (self.buffer.width as usize) + (x as usize);
-                let cell = &self.buffer.cells[idx];
                 
+                let new = &self.buffer.cells[idx];
+                let old = &self.prev_buffer.cells[idx];
+
+                if new == old {continue};
+
                 queue!(self.stdout, MoveTo(x, y))?;
-                match &cell.fg {
-                    Some(color) => {
-                        let fg = Self::match_cross_color(&color);
-                        queue!(self.stdout, SetForegroundColor(fg))?;
-                    },
-                    None => {}
-                };
-                match &cell.bg {
-                    Some(color) => {
-                        let bg = Self::match_cross_color(&color);
-                        queue!(self.stdout, SetBackgroundColor(bg))?;
-                    },
-                    None => {}
+                
+                if new.fg != cur_fg {
+                    match &new.fg {
+                        Some(color) => queue!(
+                            self.stdout, 
+                            SetForegroundColor(Self::match_cross_color(&color)
+                        ))?,
+                        None => queue!(self.stdout, SetForegroundColor(CrossColor::Reset))?,
+                    }
+                    cur_fg = new.fg.clone();
                 }
-                queue!(self.stdout, Print(cell.symbol), ResetColor)?;
+                
+                if new.bg != cur_bg {
+                    match &new.bg {
+                        Some(color) => queue!(
+                            self.stdout, 
+                            SetBackgroundColor(Self::match_cross_color(&color)
+                        ))?,
+                        None => queue!(self.stdout, SetBackgroundColor(CrossColor::Reset))?,
+                    }
+                    cur_bg = new.bg.clone();
+                }
+
+                queue!(self.stdout, Print(new.symbol))?;
+                self.prev_buffer.cells[idx] = new.clone();
             }
         }
 
@@ -207,7 +230,7 @@ impl App {
             .map_err(|e| AppError::error(format!("Can't enable_raw_mode: {}", e)))?;
 
         loop {
-            self.update();
+            self.update()?;
             self.render()?;
 
             let _ = self.flush_to_terminal();

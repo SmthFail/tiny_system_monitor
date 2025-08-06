@@ -6,7 +6,7 @@ use std::{
     cell::RefCell
 };
 
-enum TextSource {
+pub enum TextSource {
     Static(String),
     Editable(Rc<RefCell<String>>),
 }
