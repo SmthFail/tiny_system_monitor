@@ -87,7 +87,8 @@ impl Widget for TextWidget {
         };
         ChildConstraints{
             min_width: None,
-            max_width: Some(width as u16),
+            //max_width: Some(width as u16),
+            max_width: None,
             min_height: Some(1),
             max_height: Some(1)
         }

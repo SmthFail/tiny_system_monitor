@@ -239,13 +239,9 @@ impl Widget for Container {
         // Check for at least 1 column and row exist 
         if self.border {
             if area.width < 3 || area.height < 3 {
-                return Err(AppError::warning("Overflowed"))
+                return Err(AppError::warning("Overflowed (too small)"))
             }
-        } else {
-            if area.width < 1 || area.height < 1 {
-                return Err(AppError::warning("Overflowed"))
-            }
-        }
+        } 
 
         // Calculate draw rectangle for childs. Draw border if needed
         let inner = if self.border {
@@ -291,12 +287,21 @@ impl Widget for Container {
     }
 
     fn get_constraints(&self) -> ChildConstraints {
-        ChildConstraints {
-            min_width: self.width,
-            max_width: self.width,
-            min_height: self.height,
-            max_height: self.height 
-        }
+        let mut constraints = ChildConstraints {
+            min_width: None,
+            max_width: None,
+            min_height: None,
+            max_height: None 
+        };
+        for child in &self.children {
+            constraints += child.get_constraints()
+        };
+
+        if self.border {
+            constraints += 2;
+        } 
+
+        constraints
     }
 
     fn update(&mut self) -> Result<(), AppError>{
@@ -304,5 +309,9 @@ impl Widget for Container {
             child.update()?;
         }
         Ok(())
+    }
+
+    fn get_children(&self) -> &[Box<dyn Widget>] {
+        &self.children
     }
 }

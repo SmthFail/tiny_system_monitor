@@ -131,7 +131,7 @@ impl Widget for NetworkInfo {
         self.ui.update()?;
         Ok(())
     }
-
+   
     fn get_constraints(&self) -> ChildConstraints {
        self.constraints.clone() // TODO
     }

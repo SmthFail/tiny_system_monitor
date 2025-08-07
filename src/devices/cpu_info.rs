@@ -108,11 +108,6 @@ impl Widget for CpuInfo {
     }
 
     fn get_constraints(&self) -> ChildConstraints {
-       ChildConstraints {
-           min_width: None,
-           max_width: None,
-           min_height: None,
-           max_height: None
-       } 
+        self.ui.get_constraints()
     }
 }

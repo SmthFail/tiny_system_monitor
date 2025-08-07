@@ -67,7 +67,7 @@ impl WarningRow {
 pub struct App {
     pub buffer: Buffer,
     prev_buffer: Buffer,
-    body: Box<Container>,
+    pub body: Box<Container>,
     stdout: Stdout,
     warning_status: WarningRow,
     status_row: Box<TextWidget>
@@ -77,7 +77,7 @@ impl App {
     pub fn new() -> Result<Self, AppError> {
         let (width, height) = terminal::size()
             .map_err(|e| AppError::error(format!("Can't get terminal size {}", e)))?;
-        let body = Container::new(None,None, Layout::Vertical, Alignment::Start, false);
+        let body = Container::new(None,None, Layout::Vertical, Alignment::Start, true);
 
         // generate status row
         let version = get_version();
