@@ -86,8 +86,7 @@ impl Widget for TextWidget {
             TextSource::Editable(s) => s.borrow().len()
         };
         ChildConstraints{
-            min_width: None,
-            //max_width: Some(width as u16),
+            min_width: Some(1),
             max_width: None,
             min_height: Some(1),
             max_height: Some(1)

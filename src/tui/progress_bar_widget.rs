@@ -102,9 +102,8 @@ impl Widget for ProgressBar {
     }
 
     fn get_constraints(&self) -> ChildConstraints {
-       // TODO check properly 
        ChildConstraints {
-            min_width: None,
+            min_width: Some(1),
             max_width: None,
             min_height: Some(1),
             max_height: Some(1)
