@@ -1,4 +1,4 @@
-use super::buffer::{Buffer, Color};
+use super::buffer::{Buffer, Color, Cell, Patch};
 use super::widget::{Widget, Rect};
 use crossterm::terminal;
 use std::io::{stdout, Stdout, Write};
@@ -25,7 +25,7 @@ use crate::{
     get_version
 };
 
-
+use std::mem;
 
 struct WarningRow {
     is_error: bool,
@@ -105,8 +105,8 @@ impl App {
     }
 
     pub fn resize(&mut self, width: u16, height: u16) {
-        self.buffer = Buffer::new(width, height);
-        self.prev_buffer = Buffer::new(width, height);
+        self.buffer.resize(width, height);
+        self.prev_buffer.resize(width, height);
         let _ = execute!(self.stdout, ResetColor, Clear(ClearType::All), MoveTo(0, 0));
     }
 
@@ -123,7 +123,7 @@ impl App {
             Rect {
                x: 0,
                y: 0,
-               width: width,
+               width,
                height: body_height, 
             }
         );
@@ -142,7 +142,7 @@ impl App {
                 Rect {
                     x: 0,
                     y: body_height,
-                    width: width,
+                    width,
                     height: 1
                 }
             );
@@ -154,7 +154,7 @@ impl App {
             Rect {
                 x: 0,
                 y: body_height,
-                width: width,
+                width,
                 height: 1
             }
             )?;
@@ -177,48 +177,43 @@ impl App {
 
     fn flush_to_terminal(&mut self) -> crossterm::Result<()> {
         queue!(self.stdout, ResetColor)?;
+
         let mut cur_fg: Option<Color> = None;
         let mut cur_bg: Option<Color> = None;
-
-        for y in 0..self.buffer.height {
-            for x in 0..self.buffer.width {
-                let idx = (y as usize) * (self.buffer.width as usize) + (x as usize);
+        
+        let patches = self.prev_buffer.get_diff(&self.buffer);
+        for Patch {cell: Cell {ch, fg, bg}, x, y} in patches {
                 
-                let new = &self.buffer.cells[idx];
-                let old = &self.prev_buffer.cells[idx];
-
-                if new == old {continue};
-
-                queue!(self.stdout, MoveTo(x, y))?;
+                queue!(self.stdout, MoveTo(x as u16, y as u16))?;
                 
-                if new.fg != cur_fg {
-                    match &new.fg {
+                if fg != cur_fg {
+                    match &fg {
                         Some(color) => queue!(
                             self.stdout, 
                             SetForegroundColor(Self::match_cross_color(&color)
                         ))?,
                         None => queue!(self.stdout, SetForegroundColor(CrossColor::Reset))?,
                     }
-                    cur_fg = new.fg.clone();
+                    cur_fg = fg.clone();
                 }
                 
-                if new.bg != cur_bg {
-                    match &new.bg {
+                if bg != cur_bg {
+                    match &bg {
                         Some(color) => queue!(
                             self.stdout, 
                             SetBackgroundColor(Self::match_cross_color(&color)
                         ))?,
                         None => queue!(self.stdout, SetBackgroundColor(CrossColor::Reset))?,
                     }
-                    cur_bg = new.bg.clone();
+                    cur_bg = bg.clone();
                 }
 
-                queue!(self.stdout, Print(new.symbol))?;
-                self.prev_buffer.cells[idx] = new.clone();
-            }
+                queue!(self.stdout, Print(ch))?;
         }
 
         self.stdout.flush()?;
+        
+        mem::swap(&mut self.buffer, &mut self.prev_buffer);
         Ok(())
     }
 
