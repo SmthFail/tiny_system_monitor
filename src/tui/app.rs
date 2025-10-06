@@ -1,66 +1,69 @@
 use super::buffer::{Buffer, Color, Cell, Patch};
 use super::widget::{Widget, Rect};
-use crossterm::terminal;
 use std::io::{stdout, Stdout, Write};
-use std::{
-    rc::Rc,
-    cell::RefCell
-};
 use crossterm::event::{poll, read, Event, KeyEvent, KeyCode, KeyModifiers};
 use std::time::Duration;
-use crossterm::style::{
-    SetForegroundColor, 
-    SetBackgroundColor,
-    Print, ResetColor, Color as CrossColor};
-use crossterm::{cursor, execute, queue};
-use crossterm::cursor::MoveTo;
+use crossterm::{
+    cursor,
+    terminal, 
+    style::{
+        SetForegroundColor, 
+        SetBackgroundColor,
+        Print, ResetColor, Color as CrossColor
+    },
+    terminal::{Clear, ClearType},
+    execute, 
+    queue};
+
 use super::app_error::AppError;
-use crossterm::terminal::{Clear, ClearType};
 
 use crate::{
     Container,
     Layout,
     Alignment,
     TextWidget,
-    get_version
+    get_version,
 };
+use crate::tui::cell_types::CellString;
 
 use std::mem;
 
-struct WarningRow {
-    is_error: bool,
-    message: Rc<RefCell<String>>,
+struct ErrorRow {
+    visible: bool,
+    message: CellString,
     ui: Box<TextWidget>
 }
 
-impl WarningRow {
+impl ErrorRow {
     fn new() -> Self {
-        let message = Rc::new(RefCell::new(String::new()));
+        let message = CellString::new();
         
         let row = TextWidget::new_editable(message.clone())
             .set_color(Some(Color::White), Some(Color::Yellow));
         let ui = Box::new(row);
 
-        WarningRow {
-            is_error: false,
+        ErrorRow {
+            visible: false,
             message,
             ui
         }
     }
 
-    fn update(&mut self, is_error: bool, message: String) {
-        self.is_error = is_error;
-        *self.message.borrow_mut() = message;
+    fn set_message(&mut self, message: String) {
+        self.visible = true;
+        self.message.update(message);
     }
 
     fn render(&mut self, buffer: &mut Buffer, area: Rect) -> Result<(), AppError>{
-        self.ui.render(buffer, area)?;
+        if self.visible {
+            self.ui.render(buffer, area)?;
+        }
         Ok(())
     }
 
     fn clear(&mut self) {
-        self.is_error = false;
-        *self.message.borrow_mut() = String::new();
+        self.message.clear();
+        self.visible = false;
     }
 }
 
@@ -69,7 +72,7 @@ pub struct App {
     prev_buffer: Buffer,
     pub body: Box<Container>,
     stdout: Stdout,
-    warning_status: WarningRow,
+    error_row: Box<ErrorRow>,
     status_row: Box<TextWidget>
 }
 
@@ -77,12 +80,16 @@ impl App {
     pub fn new() -> Result<Self, AppError> {
         let (width, height) = terminal::size()
             .map_err(|e| AppError::error(format!("Can't get terminal size {}", e)))?;
-        let body = Container::new(None,None, Layout::Vertical, Alignment::Start, true);
+        let body = Container::new(None,None, Layout::Vertical, Alignment::Start);
 
         // generate status row
         let version = get_version();
         let status_string = format!("q: exit, ver:{:?}", version);
-        let status_row = TextWidget::new_static(&status_string).set_color(Some(Color::White), Some(Color::Blue));
+        let status_row = TextWidget::new_static(&status_string)
+            .set_color(Some(Color::White), Some(Color::Blue));
+        
+        // error row
+        let error_row = ErrorRow::new();
 
         Ok(App {
             buffer: Buffer::new(width, height),
@@ -90,7 +97,7 @@ impl App {
             body: Box::new(body),
             stdout: stdout(),
             status_row: Box::new(status_row),
-            warning_status: WarningRow::new() 
+            error_row: Box::new(error_row)
         })
     }
     
@@ -107,12 +114,12 @@ impl App {
     pub fn resize(&mut self, width: u16, height: u16) {
         self.buffer.resize(width, height);
         self.prev_buffer.resize(width, height);
-        let _ = execute!(self.stdout, ResetColor, Clear(ClearType::All), MoveTo(0, 0));
+        let _ = execute!(self.stdout, ResetColor, Clear(ClearType::All), cursor::MoveTo(0, 0));
     }
 
     pub fn render(&mut self) -> Result<(), AppError>{
         let width = self.buffer.width;
-        let mut body_height = if self.warning_status.is_error {
+        let body_height = if self.error_row.visible {
             self.buffer.height - 2
         } else {
             self.buffer.height - 1
@@ -129,31 +136,29 @@ impl App {
         );
         match body_render {
             Ok(_) => {
-                self.warning_status.clear();
+                self.error_row.clear();
             },
             Err(value) => {
-                self.warning_status.update(true, value.message);
+                self.error_row.set_message(value.message);
             }
         }
-
-        if self.warning_status.is_error {
-            let _ = self.warning_status.render(
-                &mut self.buffer,
-                Rect {
-                    x: 0,
-                    y: body_height,
-                    width,
-                    height: 1
-                }
-            );
-            body_height += 1;
-        }
-
-        self.status_row.render(
+        
+        let _ = self.error_row.render(
             &mut self.buffer,
             Rect {
                 x: 0,
                 y: body_height,
+                width,
+                height: 1
+            }
+        );
+
+        let status_position = self.buffer.height - 1;
+        self.status_row.render(
+            &mut self.buffer,
+            Rect {
+                x: 0,
+                y: status_position,
                 width,
                 height: 1
             }
@@ -184,7 +189,7 @@ impl App {
         let patches = self.prev_buffer.get_diff(&self.buffer);
         for Patch {cell: Cell {ch, fg, bg}, x, y} in patches {
                 
-                queue!(self.stdout, MoveTo(x as u16, y as u16))?;
+                queue!(self.stdout, cursor::MoveTo(x as u16, y as u16))?;
                 
                 if fg != cur_fg {
                     match &fg {

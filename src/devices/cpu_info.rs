@@ -39,13 +39,14 @@ impl CpuInfo {
         let swap_total =  Rc::new(RefCell::new(1.0));
       
         // create ui 
-        let mut ui = Container::new(None, None, Layout::Vertical, Alignment::Start, true);
+        let mut ui = Container::new(None, None, Layout::Vertical, Alignment::Start)
+            .border(true);
         
         // title
         ui.add_child(Box::new(TextWidget::new_static("Cpu info")));
 
         // cpus container
-        let mut cpus_container = Container::new(None, None, Layout::Grid, Alignment::Start, false);
+        let mut cpus_container = Container::new(None, None, Layout::Grid, Alignment::Start);
         
         let total_progress = Rc::new(RefCell::new(100.0));
         for (i, cpu_usage) in cpus_usage.iter().enumerate() {

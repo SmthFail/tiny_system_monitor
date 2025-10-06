@@ -11,8 +11,11 @@ use crate::tui::{
     container_widget::{Container, Layout, Alignment},
     progress_bar_widget::ProgressBar,
     text_widget::TextWidget,
-    app_error::AppError
+    app_error::AppError,
+    cell_types::CellString
 };
+
+
 
 use std::ffi::OsStr;
 
@@ -23,7 +26,7 @@ struct Gpu{
     memory_total: Rc<RefCell<f64>>,
     utilization_rate: Rc<RefCell<f64>>,
     temperature: f64,
-    param_string: Rc<RefCell<String>>
+    param_string: CellString
 }
 
 impl Gpu {
@@ -60,9 +63,8 @@ impl Gpu {
             Err(_err) => panic!("{}", _err)
         };
 
-        let param_string = Rc::new(RefCell::new(
-                format!("T:{}℃ , Rx: {} KB/s, Tx: {}KB/s", temperature, rx, tx)
-        ));
+        let mut param_string = CellString::new();
+        param_string.update(format!("T:{}℃ , Rx: {} KB/s, Tx: {}KB/s", temperature, rx, tx));
 
         let utilization_rate = match device.utilization_rates() {
             Ok(utilization_rates) => Rc::new(RefCell::new(utilization_rates.gpu as f64)),
@@ -110,10 +112,8 @@ impl Gpu {
             Ok(tx) => tx as f64,
             Err(_err) => panic!("{}", _err),
         };
-
-        *self.param_string.borrow_mut() = format!(
-            "T:{}℃ , Rx: {} KB/s, Tx: {}KB/s", self.temperature, rx, tx
-        );
+        
+        self.param_string.update(format!("T:{}℃ , Rx: {} KB/s, Tx: {}KB/s", self.temperature, rx, tx));
     }
 }
 
@@ -141,15 +141,17 @@ impl GpuInfo{
 
 
         // create ui
-        let mut ui = Container::new(None, None, Layout::Vertical, Alignment::Start, true);
+        let mut ui = Container::new(None, None, Layout::Vertical, Alignment::Start)
+            .border(true);
 
         ui.add_child(Box::new(TextWidget::new_static("Gpu info")));
 
-        let mut gpus_container = Container::new(None, None, Layout::Grid, Alignment::Start, false);
+        let mut gpus_container = Container::new(None, None, Layout::Grid, Alignment::Start)
+            .border(false);
 
         for gpu in gpus.iter() {
             // set height to 5(with 1 space) untill implement auto size of container
-            let mut gpu_container = Container::new(None, Some(5), Layout::Vertical, Alignment::Start, false);
+            let mut gpu_container = Container::new(None, Some(5), Layout::Vertical, Alignment::Start);
             
             let info_string = &format!("{}", &gpu.gpu_info);
             gpu_container.add_child(Box::new(TextWidget::new_static(info_string)));

@@ -1,14 +1,14 @@
 use sysinfo::Networks;
-use std::cell::RefCell;
-use std::rc::Rc;
-
 use crate::tui::widget::{Widget, Rect, ChildConstraints};
 use std::time::Instant;
 use crate::tui::container_widget::{Container, Layout, Alignment};
 use crate::TextWidget;
 use crate::Buffer;
 
-use crate::tui::app_error::AppError;
+use crate::tui::{
+    app_error::AppError,
+    cell_types::CellString
+};
 
 
 
@@ -17,7 +17,7 @@ pub struct NetworkInfo {
     previous_time: Instant,
     previous_rx: u64,
     previous_tx: u64,
-    rate_string: Rc<RefCell<String>>,
+    rate_string: CellString,
     constraints: ChildConstraints,
     ui: Box<dyn Widget>
 }
@@ -51,11 +51,14 @@ impl NetworkInfo {
         };
 
         //create ui
-        let mut ui = Container::new(None, None, Layout::Vertical, Alignment::Start, border);
+        let mut ui = Container::new(None, None, Layout::Vertical, Alignment::Start)
+            .border(border);
         ui.add_child(Box::new(TextWidget::new_static("Network info")));
 
         let dumb_string = Self::format_rate_string(0.0, 0.0);
-        let rate_string = Rc::new(RefCell::new(dumb_string));
+        let mut rate_string = CellString::new();
+        rate_string.update(dumb_string);
+        
         ui.add_child(Box::new(TextWidget::new_editable(rate_string.clone())));
 
         NetworkInfo {
@@ -110,7 +113,7 @@ impl NetworkInfo {
         let rx_rate = current_rx.saturating_sub(self.previous_rx) as f64 / duration;
         let tx_rate = current_rx.saturating_sub(self.previous_rx) as f64 / duration;
 
-        *self.rate_string.borrow_mut() = Self::format_rate_string(rx_rate, tx_rate);
+        self.rate_string.update(Self::format_rate_string(rx_rate, tx_rate));
 
         self.previous_rx = current_rx;
         self.previous_tx = current_tx;

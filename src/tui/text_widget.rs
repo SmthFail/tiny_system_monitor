@@ -1,14 +1,11 @@
 use super::buffer::{Buffer, Cell, Color};
 use super::widget::{Widget, Rect, ChildConstraints};
 use super::app_error::AppError;
-use std::{
-    rc::Rc,
-    cell::RefCell
-};
+use crate::tui::cell_types::CellString;
 
 pub enum TextSource {
     Static(String),
-    Editable(Rc<RefCell<String>>),
+    Editable(CellString),
 }
 
 pub struct TextWidget {
@@ -26,7 +23,7 @@ impl TextWidget {
         }
     }
 
-    pub fn new_editable(text: Rc<RefCell<String>>) -> Self {
+    pub fn new_editable(text: CellString) -> Self {
         Self {
             text: TextSource::Editable(text),
             fg: None,
@@ -52,7 +49,7 @@ impl Widget for TextWidget {
 
         let mut chars: Vec<char> = match &self.text {
             TextSource::Static(s) => s.chars().collect(),
-            TextSource::Editable(s) => s.borrow().chars().collect(),
+            TextSource::Editable(s) => s.get_str().chars().collect(),
         };
 
         if chars.len() > max_width {
@@ -81,9 +78,9 @@ impl Widget for TextWidget {
     }
 
     fn get_constraints(&self) -> ChildConstraints {
-        let width = match &self.text {
+        match &self.text {
             TextSource::Static(s) => s.len(),
-            TextSource::Editable(s) => s.borrow().len()
+            TextSource::Editable(s) => s.get_str().len()
         };
         ChildConstraints{
             min_width: Some(1),

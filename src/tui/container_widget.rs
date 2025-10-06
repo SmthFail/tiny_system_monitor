@@ -34,7 +34,6 @@ impl Container {
         height: Option<u16>,
         layout: Layout,
         alignment: Alignment,
-        border: bool,
     ) -> Self {
         Self {
             children: Vec::new(),
@@ -42,8 +41,13 @@ impl Container {
             height,
             layout,
             alignment,
-            border,
+            border: false,
         }
+    }
+
+    pub fn border(mut self, enable: bool) -> Self{
+        self.border = enable;
+        self
     }
 
     pub fn add_child(&mut self, w: Box<dyn Widget>) {

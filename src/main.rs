@@ -48,10 +48,10 @@ fn main() {
     });
 
     // main container 
-    let mut h_container = Container::new(None, None, Layout::Horizontal, Alignment::Start, false);
+    let mut h_container = Container::new(None, None, Layout::Horizontal, Alignment::Start);
     h_container.add_child(Box::new(cpu_info::CpuInfo::new()));
 
-    let mut v_container = Container::new(None,None, Layout::Vertical, Alignment::Start, false);
+    let mut v_container = Container::new(None,None, Layout::Vertical, Alignment::Start);
     v_container.add_child(Box::new(gpu_info::GpuInfo::new()));
     v_container.add_child(Box::new(network_info::NetworkInfo::new(true)));
     h_container.add_child(Box::new(v_container));
