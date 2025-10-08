@@ -6,6 +6,7 @@ mod tui;
 use tui::app::App;
 use tui::container_widget::{Container, Alignment, Layout};
 use tui::text_widget::TextWidget;
+use tui::widgets::box_widget::BoxWidget;
 use crate::tui::buffer::Buffer;
 use utils::version_checker::get_version;
 
@@ -49,11 +50,28 @@ fn main() {
 
     // main container 
     let mut h_container = Container::new(None, None, Layout::Horizontal, Alignment::Start);
-    h_container.add_child(Box::new(cpu_info::CpuInfo::new()));
+    h_container.add_child(Box::new(
+        BoxWidget::new()
+            .border(true)
+            .name(String::from("CPU"))
+            .child(cpu_info::CpuInfo::new()))
+    );
 
     let mut v_container = Container::new(None,None, Layout::Vertical, Alignment::Start);
-    v_container.add_child(Box::new(gpu_info::GpuInfo::new()));
-    v_container.add_child(Box::new(network_info::NetworkInfo::new(true)));
+    v_container.add_child(Box::new(
+        BoxWidget::new()
+            .border(true)
+            .name(String::from("GPU"))
+            .child(gpu_info::GpuInfo::new()))
+    );
+
+    let network_widget = Box::new(
+        BoxWidget::new()
+            .border(true)
+            .name(String::from("Network info"))
+            .child(network_info::NetworkInfo::new())
+    );
+    v_container.add_child(network_widget);
     h_container.add_child(Box::new(v_container));
 
     app.add_child(Box::new(h_container));

@@ -25,7 +25,6 @@ pub struct Container {
     pub children: Vec<Box<dyn Widget>>,
     pub layout: Layout,
     pub alignment: Alignment,
-    border: bool,
 }
 
 impl Container {
@@ -41,51 +40,11 @@ impl Container {
             height,
             layout,
             alignment,
-            border: false,
         }
-    }
-
-    pub fn border(mut self, enable: bool) -> Self{
-        self.border = enable;
-        self
     }
 
     pub fn add_child(&mut self, w: Box<dyn Widget>) {
         self.children.push(w);
-    }
-
-    // ---------- helpers ----------
-
-    fn draw_border(&self, buff: &mut Buffer, area: Rect) {
-        if area.width == 0 || area.height == 0 {
-            return;
-        }
-        let x1 = area.x;
-        let y1 = area.y;
-        let x2 = x1 + area.width.saturating_sub(1);
-        let y2 = y1 + area.height.saturating_sub(1);
-
-        // corners
-        buff.set_cell(x1, y1, Cell::new('┌'));
-        buff.set_cell(x2, y1, Cell::new('┐'));
-        buff.set_cell(x1, y2, Cell::new('└'));
-        buff.set_cell(x2, y2, Cell::new('┘'));
-
-        // top and bottom
-        for x in (x1 + 1)..x2 {
-            buff.set_cell(x, y1, Cell::new('─'));
-            if y2 > y1 {
-                buff.set_cell(x, y2, Cell::new('─'));
-            }
-        }
-
-        // left and right
-        for y in (y1 + 1)..y2 {
-            buff.set_cell(x1, y, Cell::new('│'));
-            if x2 > x1 {
-                buff.set_cell(x2, y, Cell::new('│'));
-            }
-        }
     }
 
     /// статический хелпер, чтобы не брать &self в циклах iter_mut
@@ -229,20 +188,20 @@ impl Container {
 
     // ---------- drawing ----------
 
-    fn _draw_vertical(&mut self, inner: Rect, buff: &mut Buffer, sizes: Vec<(u16,u16)>) -> Result<(), AppError> {
+    fn _draw_vertical(&mut self, capped: Rect, buff: &mut Buffer, sizes: Vec<(u16,u16)>) -> Result<(), AppError> {
         let align = self.alignment;
-        let mut y = inner.y;
+        let mut y = capped.y;
 
         for (i, child) in self.children.iter_mut().enumerate() {
-            if y >= inner.y + inner.height { break; }
+            if y >= capped.y + capped.height { break; }
 
             let desired_h = sizes[i].1.max(1);
-            let avail = (inner.y + inner.height).saturating_sub(y);
+            let avail = (capped.y + capped.height).saturating_sub(y);
             let h = desired_h.min(avail);
 
             if h == 0 { break; }
 
-            let rect = Rect { x: inner.x, y, width: inner.width, height: h };
+            let rect = Rect { x: capped.x, y, width: capped.width, height: h };
 
             // проверим min_* ребёнка
             let cc = child.get_constraints();
@@ -261,20 +220,20 @@ impl Container {
         Ok(())
     }
 
-    fn _draw_horizontal(&mut self, inner: Rect, buff: &mut Buffer, sizes: Vec<(u16,u16)>) -> Result<(), AppError> {
+    fn _draw_horizontal(&mut self, capped: Rect, buff: &mut Buffer, sizes: Vec<(u16,u16)>) -> Result<(), AppError> {
         let align = self.alignment;
-        let mut x = inner.x;
+        let mut x = capped.x;
 
         for (i, child) in self.children.iter_mut().enumerate() {
-            if x >= inner.x + inner.width { break; }
+            if x >= capped.x + capped.width { break; }
 
             let desired_w = sizes[i].0.max(1);
-            let avail = (inner.x + inner.width).saturating_sub(x);
+            let avail = (capped.x + capped.width).saturating_sub(x);
             let w = desired_w.min(avail);
 
             if w == 0 { break; }
 
-            let rect = Rect { x, y: inner.y, width: w, height: inner.height };
+            let rect = Rect { x, y: capped.y, width: w, height: capped.height };
 
             let cc = child.get_constraints();
             let min_w = cc.min_width.unwrap_or(1);
@@ -291,31 +250,31 @@ impl Container {
         Ok(())
     }
 
-    fn _draw_grid(&mut self, inner: Rect, buff: &mut Buffer) -> Result<(), AppError> {
+    fn _draw_grid(&mut self, capped: Rect, buff: &mut Buffer) -> Result<(), AppError> {
         let align = self.alignment;
 
-        let child_sizes = match self.calculate_childs_size(inner) {
+        let child_sizes = match self.calculate_childs_size(capped) {
             Some(v) => v,
             None => return Ok(())
         };
         let heights: Vec<u16> = child_sizes.iter().map(|&(_, h)| h.max(1)).collect();
         if heights.is_empty() { return Ok(()); }
 
-        let mut columns = Self::make_columns(&heights, inner.height);
+        let mut columns = Self::make_columns(&heights, capped.height);
 
         // если колонок больше, чем ширины, урежем — чтобы base_w >= 1
-        if (columns.len() as u16) > inner.width {
-            columns.truncate(inner.width as usize);
+        if (columns.len() as u16) > capped.width {
+            columns.truncate(capped.width as usize);
         }
 
         let n_cols = columns.len() as u16;
-        if n_cols == 0 || inner.width == 0 || inner.height == 0 {
+        if n_cols == 0 || capped.width == 0 || capped.height == 0 {
             // фоллбек: очень узко — вертикальный список
-            let mut y = inner.y;
+            let mut y = capped.y;
             for (idx, child) in self.children.iter_mut().enumerate() {
-                if y >= inner.y + inner.height { break; }
-                let h = child_sizes[idx].1.min((inner.y + inner.height).saturating_sub(y)).max(1);
-                let rect = Rect { x: inner.x, y, width: inner.width, height: h };
+                if y >= capped.y + capped.height { break; }
+                let h = child_sizes[idx].1.min((capped.y + capped.height).saturating_sub(y)).max(1);
+                let rect = Rect { x: capped.x, y, width: capped.width, height: h };
                 let cc = child.get_constraints();
                 let min_w = cc.min_width.unwrap_or(1);
                 let min_h = cc.min_height.unwrap_or(1);
@@ -329,16 +288,16 @@ impl Container {
             return Ok(());
         }
 
-        let base_w = inner.width / n_cols;
-        let extra = inner.width % n_cols;
+        let base_w = capped.width / n_cols;
+        let extra = capped.width % n_cols;
 
         if base_w == 0 {
             // фоллбек: вертикальный список
-            let mut y = inner.y;
+            let mut y = capped.y;
             for (idx, child) in self.children.iter_mut().enumerate() {
-                if y >= inner.y + inner.height { break; }
-                let h = child_sizes[idx].1.min((inner.y + inner.height).saturating_sub(y)).max(1);
-                let rect = Rect { x: inner.x, y, width: inner.width, height: h };
+                if y >= capped.y + capped.height { break; }
+                let h = child_sizes[idx].1.min((capped.y + capped.height).saturating_sub(y)).max(1);
+                let rect = Rect { x: capped.x, y, width: capped.width, height: h };
                 let cc = child.get_constraints();
                 let min_w = cc.min_width.unwrap_or(1);
                 let min_h = cc.min_height.unwrap_or(1);
@@ -352,14 +311,14 @@ impl Container {
             return Ok(());
         }
 
-        let mut x = inner.x;
+        let mut x = capped.x;
         for (ci, col) in columns.into_iter().enumerate() {
             let w = base_w + if (ci as u16) < extra { 1 } else { 0 };
-            let mut y = inner.y;
+            let mut y = capped.y;
 
             for idx in col {
-                if y >= inner.y + inner.height { break; }
-                let h = child_sizes[idx].1.min((inner.y + inner.height).saturating_sub(y)).max(1);
+                if y >= capped.y + capped.height { break; }
+                let h = child_sizes[idx].1.min((capped.y + capped.height).saturating_sub(y)).max(1);
                 if h == 0 { break; }
 
                 let rect = Rect { x, y, width: w, height: h };
@@ -389,7 +348,7 @@ impl Widget for Container {
 
     fn render(&mut self, buff: &mut Buffer, area: Rect) -> Result<(), AppError> {
         // вместо фатальной ошибки — мягкий плейсхолдер
-        if self.border && (area.width < 3 || area.height < 3) {
+        if  area.width < 2 || area.height < 2 {
             if area.width > 0 && area.height > 0 {
                 Self::draw_overflow_text(self.alignment, buff, area, "Overflowed");
             }
@@ -401,30 +360,17 @@ impl Widget for Container {
         if let Some(cap_w) = self.width  { capped.width  = capped.width.min(cap_w); }
         if let Some(cap_h) = self.height { capped.height = capped.height.min(cap_h); }
 
-        // внутренний прямоугольник
-        let inner = if self.border {
-            self.draw_border(buff, capped);
-            Rect {
-                x: capped.x + 1,
-                y: capped.y + 1,
-                width:  capped.width.saturating_sub(2),
-                height: capped.height.saturating_sub(2),
-            }
-        } else {
-            capped
-        };
-
         if self.children.is_empty() { return Ok(()); }
 
-        let childs_size = match self.calculate_childs_size(inner) {
+        let childs_size = match self.calculate_childs_size(capped) {
             Some(sz) => sz,
             None => return Ok(())
         };
 
         match self.layout {
-            Layout::Vertical   => self._draw_vertical(inner, buff, childs_size)?,
-            Layout::Horizontal => self._draw_horizontal(inner, buff, childs_size)?,
-            Layout::Grid       => self._draw_grid(inner, buff)?,
+            Layout::Vertical   => self._draw_vertical(capped, buff, childs_size)?,
+            Layout::Horizontal => self._draw_horizontal(capped, buff, childs_size)?,
+            Layout::Grid       => self._draw_grid(capped, buff)?,
         }
 
         Ok(())
@@ -515,12 +461,6 @@ impl Widget for Container {
             }
         };
 
-        // учтём рамку
-        if self.border {
-            agg += 2;
-        }
-
-        // и cap от self.width/self.height
         if let Some(cap_w) = self.width {
             agg.max_width = agg.max_width.map(|mw| mw.min(cap_w)).or(Some(cap_w));
         }

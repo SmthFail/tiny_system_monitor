@@ -141,13 +141,9 @@ impl GpuInfo{
 
 
         // create ui
-        let mut ui = Container::new(None, None, Layout::Vertical, Alignment::Start)
-            .border(true);
+        let mut ui = Container::new(None, None, Layout::Vertical, Alignment::Start);
 
-        ui.add_child(Box::new(TextWidget::new_static("Gpu info")));
-
-        let mut gpus_container = Container::new(None, None, Layout::Grid, Alignment::Start)
-            .border(false);
+        let mut gpus_container = Container::new(None, None, Layout::Grid, Alignment::Start);
 
         for gpu in gpus.iter() {
             // set height to 5(with 1 space) untill implement auto size of container

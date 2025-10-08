@@ -23,7 +23,7 @@ pub struct NetworkInfo {
 }
 
 impl NetworkInfo {
-    pub fn new(border: bool) -> Self {
+    pub fn new() -> Self {
         let networks = Networks::new_with_refreshed_list();
         let previous_time = Instant::now();
         
@@ -37,29 +37,20 @@ impl NetworkInfo {
 
         //calculate constraints
         
-        let height = if border {
-            Some(4)
-        } else {
-            Some(2)
-        };
-
         let constraints = ChildConstraints {
             min_width: None,
             max_width: None,
-            min_height: height,
-            max_height: height
+            min_height: Some(1),
+            max_height: Some(1)
         };
 
         //create ui
-        let mut ui = Container::new(None, None, Layout::Vertical, Alignment::Start)
-            .border(border);
-        ui.add_child(Box::new(TextWidget::new_static("Network info")));
 
         let dumb_string = Self::format_rate_string(0.0, 0.0);
         let mut rate_string = CellString::new();
         rate_string.update(dumb_string);
         
-        ui.add_child(Box::new(TextWidget::new_editable(rate_string.clone())));
+        let ui = Box::new(TextWidget::new_editable(rate_string.clone()));
 
         NetworkInfo {
             networks,
@@ -68,7 +59,7 @@ impl NetworkInfo {
             previous_tx,
             rate_string,
             constraints,
-            ui: Box::new(ui)
+            ui
         }
     }
 
