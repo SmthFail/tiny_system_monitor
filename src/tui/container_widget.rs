@@ -1,7 +1,7 @@
 // src/tui/container_widget.rs
 
 use super::{
-    widget::{Widget, Rect, ChildConstraints},
+    widget::{Widget, Rect, ChildConstraints, WidgetBox},
     buffer::{Buffer, Cell},
     app_error::AppError,
 };
@@ -43,8 +43,8 @@ impl Container {
         }
     }
 
-    pub fn add_child(&mut self, w: Box<dyn Widget>) {
-        self.children.push(w);
+    pub fn add_child<I: Into<WidgetBox>>(&mut self, w: I) {
+        self.children.push(w.into().0);
     }
 
     /// статический хелпер, чтобы не брать &self в циклах iter_mut

@@ -1,7 +1,6 @@
 use sysinfo::Networks;
 use crate::tui::widget::{Widget, Rect, ChildConstraints};
 use std::time::Instant;
-use crate::tui::container_widget::{Container, Layout, Alignment};
 use crate::TextWidget;
 use crate::Buffer;
 

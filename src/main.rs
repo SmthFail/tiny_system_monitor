@@ -50,36 +50,36 @@ fn main() {
 
     // main container 
     let mut h_container = Container::new(None, None, Layout::Horizontal, Alignment::Start);
-    h_container.add_child(Box::new(
+    h_container.add_child(
         BoxWidget::new()
             .border(true)
             .name(String::from("CPU"))
-            .child(cpu_info::CpuInfo::new()))
+            .child(cpu_info::CpuInfo::new())
     );
 
     let mut v_container = Container::new(None,None, Layout::Vertical, Alignment::Start);
-    v_container.add_child(Box::new(
+    v_container.add_child(        
         BoxWidget::new()
             .border(true)
             .name(String::from("GPU"))
-            .child(gpu_info::GpuInfo::new()))
+            .child(gpu_info::GpuInfo::new())
     );
 
-    let network_widget = Box::new(
-        BoxWidget::new()
+    let network_widget = BoxWidget::new()
             .border(true)
             .name(String::from("Network info"))
-            .child(network_info::NetworkInfo::new())
+            .child(network_info::NetworkInfo::new()
     );
     v_container.add_child(network_widget);
-    h_container.add_child(Box::new(v_container));
+    h_container.add_child(v_container);
 
-    app.add_child(Box::new(h_container));
+    app.add_child(h_container);
     
     if args.len() > 1 {
         match args[1].as_str() {
             "--tree" => {
-                debug_draw_childs(app.body.as_ref(), 0);
+                println!("Not implemented with vnode tree");
+                //debug_draw_childs(app., 0);
                 return;
             },
             _ => {

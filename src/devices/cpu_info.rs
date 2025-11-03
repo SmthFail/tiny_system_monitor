@@ -5,7 +5,6 @@ use std::rc::Rc;
 use crate::tui::{
     container_widget::{Container, Layout, Alignment},
     progress_bar_widget::ProgressBar,
-    text_widget::TextWidget,
     app_error::AppError
 };
 use crate::Buffer;
@@ -52,16 +51,16 @@ impl CpuInfo {
                 &cpu_usage,
                 &total_progress,
                 true);
-            cpus_container.add_child(Box::new(cpu_progress));
+            cpus_container.add_child(cpu_progress);
         }
-        ui.add_child(Box::new(cpus_container));
+        ui.add_child(cpus_container);
 
         // ram and swap
         let ram_progress = ProgressBar::new("RAM", "GB", &ram_used, &ram_total, false);
         let swap_progress = ProgressBar::new("SWP", "GB", &swap_used, &swap_total, false);
 
-        ui.add_child(Box::new(ram_progress));
-        ui.add_child(Box::new(swap_progress));
+        ui.add_child(ram_progress);
+        ui.add_child(swap_progress);
         
         CpuInfo {
             sys,

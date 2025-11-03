@@ -150,20 +150,20 @@ impl GpuInfo{
             let mut gpu_container = Container::new(None, Some(5), Layout::Vertical, Alignment::Start);
             
             let info_string = &format!("{}", &gpu.gpu_info);
-            gpu_container.add_child(Box::new(TextWidget::new_static(info_string)));
-            gpu_container.add_child(Box::new(TextWidget::new_editable(gpu.param_string.clone())));
-            gpu_container.add_child(Box::new(ProgressBar::new(
+            gpu_container.add_child(TextWidget::new_static(info_string));
+            gpu_container.add_child(TextWidget::new_editable(gpu.param_string.clone()));
+            gpu_container.add_child(ProgressBar::new(
                 "GPU", "GB", &gpu.memory_used, &gpu.memory_total, false) 
-            ));
+            );
             
             let total_gpu = Rc::new(RefCell::new(100.0));
-            gpu_container.add_child(Box::new(ProgressBar::new(
+            gpu_container.add_child(ProgressBar::new(
                 "RAM", "%", &gpu.utilization_rate, &total_gpu, true)
-            ));
-            gpus_container.add_child(Box::new(gpu_container));
+            );
+            gpus_container.add_child(gpu_container);
         }
 
-        ui.add_child(Box::new(gpus_container));
+        ui.add_child(gpus_container);
         
         GpuInfo {
             nvml, 

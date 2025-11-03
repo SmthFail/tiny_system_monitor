@@ -4,6 +4,26 @@ use std::ops::{AddAssign, Add};
 use std::any::type_name;
 
 
+pub struct WidgetBox(pub Box<dyn Widget>);
+
+// любой конкретный виджет
+impl<W: Widget + 'static> From<W> for WidgetBox {
+    fn from(w: W) -> Self { WidgetBox(Box::new(w)) }
+}
+
+// (необязательно, но удобно) уже готовый trait-объект
+impl From<Box<dyn Widget>> for WidgetBox {
+    fn from(w: Box<dyn Widget>) -> Self { WidgetBox(w) }
+}
+
+impl WidgetBox {
+    // утилита на случай, если где-то остался Box<Concrete>
+    pub fn from_box<W: Widget + 'static>(w: Box<W>) -> Self {
+        WidgetBox(w as Box<dyn Widget>)
+    }
+}
+
+
 #[derive(Copy, Clone, Debug)]
 pub struct Rect {
     pub x: u16,
