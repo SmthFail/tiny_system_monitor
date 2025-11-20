@@ -93,7 +93,9 @@ pub trait Widget {
 
     fn get_constraints(&self) -> ChildConstraints;
 
-    fn update(&mut self) -> Result<(), AppError>;
+    fn update(&mut self) -> Result<(), AppError> {
+        Ok(())
+    }
 
     fn get_children(&self) -> &[Box<dyn Widget>] {&[]}
 

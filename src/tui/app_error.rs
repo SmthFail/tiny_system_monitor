@@ -1,9 +1,11 @@
+#[derive(Clone)]
 pub enum AppErrorLevel {
     Warning,
     Error
 }
 
 
+#[derive(Clone)]
 pub struct AppError {
     pub level: AppErrorLevel,
     pub message: String

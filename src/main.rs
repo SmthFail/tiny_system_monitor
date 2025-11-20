@@ -58,11 +58,12 @@ fn main() {
     );
 
     let mut v_container = Container::new(None,None, Layout::Vertical, Alignment::Start);
-    v_container.add_child(        
+    use tui::widgets::error_wrappers::with_error_handling;
+    v_container.add_child(
         BoxWidget::new()
             .border(true)
             .name(String::from("GPU"))
-            .child(gpu_info::GpuInfo::new())
+            .child(with_error_handling(gpu_info::GpuInfo::new()))
     );
 
     let network_widget = BoxWidget::new()
