@@ -22,6 +22,7 @@ use crate::tui::engine::{
 };
 use crate::{get_version, TextWidget};
 use crate::tui::engine::IntoNode; // для app.add_child(...)
+use crate::tui::widgets::dialog_widget::DialogWidget;
 
 struct ErrorRow {
     visible: bool,
@@ -70,6 +71,9 @@ pub struct App {
     vnodes: Vec<VNode>,
     // живое дерево между кадрами (для reconcile)
     root_elem: Option<Element>,
+
+    // диалоговое окно
+    dialog: Option<DialogWidget>,
 }
 
 impl App {
@@ -90,11 +94,34 @@ impl App {
             error_row: Box::new(ErrorRow::new()),
             vnodes: vec![],
             root_elem: None,
+            dialog: None,
         })
     }
 
     pub fn add_child<N: IntoNode>(&mut self, child: N) {
         self.vnodes.push(child.into_node());
+    }
+
+    pub fn show_dialog(&mut self, title: &str, message: &str) {
+        let mut dialog = DialogWidget::new(title, message);
+        dialog.show();
+        self.dialog = Some(dialog);
+    }
+
+    pub fn hide_dialog(&mut self) {
+        if let Some(ref mut dialog) = self.dialog {
+            dialog.hide();
+        }
+    }
+
+    pub fn toggle_help_dialog(&mut self) {
+        if self.dialog.is_none() {
+            self.dialog = Some(DialogWidget::new("Help", "This is help"));
+        }
+
+        if let Some(ref mut dialog) = self.dialog {
+            dialog.toggle();
+        }
     }
 
     /// Отладочный вывод виртуального дерева (для `--tree`)
@@ -136,11 +163,12 @@ impl App {
     }
 
     pub fn render(&mut self) -> Result<(), AppError> {
-        let width = self.buffer.width;
+        let buffer_width = self.buffer.width;
+        let buffer_height = self.buffer.height;
         let body_height = if self.error_row.visible {
-            self.buffer.height - 2
+            buffer_height - 2
         } else {
-            self.buffer.height - 1
+            buffer_height - 1
         };
 
         // корневой контейнер виртуального дерева
@@ -161,7 +189,7 @@ impl App {
         // layout -> update (живых виджетов) -> paint
         layout_equal_split(
             elem,
-            Rect { x: 0, y: 0, width, height: body_height },
+            Rect { x: 0, y: 0, width: buffer_width, height: body_height },
         );
 
         if let Err(e) = update_tree(elem) {
@@ -176,15 +204,28 @@ impl App {
         // error row
         let _ = self.error_row.render(
             &mut self.buffer,
-            Rect { x: 0, y: body_height, width, height: 1 },
+            Rect { x: 0, y: body_height, width: buffer_width, height: 1 },
         );
 
         // status row
-        let status_y = self.buffer.height - 1;
+        let status_y = buffer_height - 1;
         self.status_row.render(
             &mut self.buffer,
-            Rect { x: 0, y: status_y, width, height: 1 },
+            Rect { x: 0, y: status_y, width: buffer_width, height: 1 },
         )?;
+
+        // render dialog on top if visible
+        if let Some(ref mut dialog) = self.dialog {
+            if dialog.is_visible() {
+                let dialog_area = Rect {
+                    x: 0,
+                    y: 0,
+                    width: buffer_width,
+                    height: buffer_height
+                };
+                dialog.render(&mut self.buffer, dialog_area)?;
+            }
+        }
 
         Ok(())
     }
@@ -261,6 +302,11 @@ impl App {
                         modifiers: KeyModifiers::NONE,
                         ..
                     }) => break,
+                    Event::Key(KeyEvent {
+                        code: KeyCode::Char('h'),
+                        modifiers: KeyModifiers::NONE,
+                        ..
+                    }) => self.toggle_help_dialog(),
                     Event::Resize(width, height) => self.resize(width, height),
                     _ => (),
                 }
