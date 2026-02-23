@@ -7,6 +7,8 @@ use app::App;
 use tiny_tui::container_widget::{Container, Alignment, Layout};
 use tiny_tui::widgets::box_widget::BoxWidget;
 use tiny_tui::widgets::error_wrappers::with_error_handling;
+use tiny_tui::route::Route;
+use tiny_tui::engine::IntoNode;
 
 use std::env;
 
@@ -20,7 +22,7 @@ fn main() {
         std::process::exit(1)
     });
 
-    // main container
+    // Create main route with all widgets
     let mut h_container = Container::new(None, None, Layout::Horizontal, Alignment::Start);
     h_container.add_child(
         BoxWidget::new()
@@ -45,13 +47,14 @@ fn main() {
     v_container.add_child(network_widget);
     h_container.add_child(v_container);
 
-    app.add_child(h_container);
+    // Push main route (not fullscreen - allows dialogs/overlays on top)
+    let main_route = Route::new(vec![h_container.into_node()]);
+    app.push_route(main_route);
 
     if args.len() > 1 {
         match args[1].as_str() {
             "--tree" => {
                 println!("Not implemented with vnode tree");
-                //debug_draw_childs(app., 0);
                 return;
             },
             _ => {

@@ -1,12 +1,10 @@
 use tiny_tui::{
     app_error::AppError,
     buffer::{Buffer, Cell, Color, Patch},
-    widget::Rect,
-    widget::Widget,
+    widget::{Rect, Widget},
     text_widget::TextWidget,
-    widgets::dialog_widget::DialogWidget,
-    engine::{layout_equal_split, paint, reconcile, update_tree, VNode, IntoNode, Key, Direction},
     cell_types::CellString,
+    route::Route,
 };
 
 use crossterm::{
@@ -23,7 +21,6 @@ use std::mem;
 use std::time::Duration;
 
 use crate::utils::version_checker::get_version;
-use tiny_tui::engine::Element;
 
 struct ErrorRow {
     visible: bool,
@@ -68,13 +65,8 @@ pub struct App {
     error_row: Box<ErrorRow>,
     status_row: Box<TextWidget>,
 
-    // декларативное описание (VNode)
-    vnodes: Vec<VNode>,
-    // живое дерево между кадрами (для reconcile)
-    root_elem: Option<Element>,
-
-    // диалоговое окно
-    dialog: Option<DialogWidget>,
+    // Route stack
+    routes: Vec<Route>,
 }
 
 impl App {
@@ -83,7 +75,7 @@ impl App {
             terminal::size().map_err(|e| AppError::error(format!("Can't get terminal size {}", e)))?;
 
         let version = get_version();
-        let status_string = format!("q: exit, ver:{:?}", version);
+        let status_string = format!("q: exit, h: help, ver:{:?}", version);
         let status_row =
             TextWidget::new_static(&status_string).set_color(Some(Color::White), Some(Color::Blue));
 
@@ -93,66 +85,64 @@ impl App {
             stdout: stdout(),
             status_row: Box::new(status_row),
             error_row: Box::new(ErrorRow::new()),
-            vnodes: vec![],
-            root_elem: None,
-            dialog: None,
+            routes: Vec::new(),
         })
     }
 
-    pub fn add_child<N: IntoNode>(&mut self, child: N) {
-        self.vnodes.push(child.into_node());
+    /// Add a route to the stack
+    pub fn push_route(&mut self, route: Route) {
+        self.routes.push(route);
     }
 
-    pub fn show_dialog(&mut self, title: &str, message: &str) {
-        let mut dialog = DialogWidget::new(title, message);
-        dialog.show();
-        self.dialog = Some(dialog);
+    /// Pop the top route from the stack
+    pub fn pop_route(&mut self) -> Option<Route> {
+        self.routes.pop()
     }
 
-    pub fn hide_dialog(&mut self) {
-        if let Some(ref mut dialog) = self.dialog {
-            dialog.hide();
+    /// Get the top route (for rendering/input)
+    pub fn top_route(&mut self) -> Option<&mut Route> {
+        self.routes.last_mut()
+    }
+
+    /// Get number of routes
+    pub fn route_count(&self) -> usize {
+        self.routes.len()
+    }
+
+    /// Show help dialog as a route overlay
+    pub fn show_help(&mut self) {
+        use tiny_tui::engine::IntoNode;
+        use tiny_tui::widgets::info_dialog::InfoDialog;
+
+        let help_text = "q: quit\nh: toggle help";
+        let dialog = InfoDialog::new("Help", help_text);
+
+        let route = Route::new(vec![dialog.into_node()])
+            .modal();
+
+        self.push_route(route);
+    }
+
+    /// Hide help dialog (pop the top route if it's a help dialog)
+    pub fn hide_help(&mut self) {
+        // Only pop if top route is a help dialog (we could check by key or metadata)
+        // For now, just pop if there's more than 1 route
+        if self.routes.len() > 1 {
+            self.pop_route();
         }
     }
 
-    pub fn toggle_help_dialog(&mut self) {
-        if self.dialog.is_none() {
-            self.dialog = Some(DialogWidget::new("Help", "This is help"));
+    /// Toggle help dialog
+    pub fn toggle_help(&mut self) {
+        // Check if help dialog is already open (more than 1 route)
+        if self.routes.len() > 1 {
+            self.hide_help();
+        } else {
+            self.show_help();
         }
-
-        if let Some(ref mut dialog) = self.dialog {
-            dialog.toggle();
-        }
-    }
-
-    /// Отладочный вывод виртуального дерева (для `--tree`)
-    pub fn debug_print_tree(&self) {
-        fn walk(nodes: &[VNode], depth: usize) {
-            for n in nodes {
-                let indent = "  ".repeat(depth);
-                match n {
-                    VNode::Container { key, dir, children } => {
-                        eprintln!(
-                            "{}Container key={:?} dir={:?}",
-                            indent,
-                            key.as_ref().map(|k| &k.0),
-                            dir
-                        );
-                        walk(children, depth + 1);
-                    }
-                    VNode::LeafInstance { key, .. } => {
-                        eprintln!("{}Leaf key={}", indent, key.0);
-                    }
-                }
-            }
-        }
-        eprintln!("--- VNode tree ---");
-        walk(&self.vnodes, 0);
-        eprintln!("------------------");
     }
 
     pub fn update(&mut self) -> Result<(), AppError> {
-        // обновляем только status_row здесь; дерево — в update_tree() после layout
         self.status_row.update()?;
         Ok(())
     }
@@ -172,34 +162,15 @@ impl App {
             buffer_height - 1
         };
 
-        // корневой контейнер виртуального дерева
-        let root_vnode = VNode::Container {
-            key: Some(Key("root".into())),
-            dir: Direction::Vertical,
-            children: self.vnodes.clone(),
-        };
+        let area = Rect { x: 0, y: 0, width: buffer_width, height: body_height };
 
-        // первый кадр — mount; далее — reconcile
-        if let Some(elem) = &mut self.root_elem {
-            reconcile(elem, &root_vnode);
-        } else {
-            self.root_elem = Some(tiny_tui::engine::mount(&root_vnode));
-        }
-        let elem = self.root_elem.as_mut().unwrap();
+        // Clear buffer to start fresh each frame
+        // This ensures proper diff when routes are popped
+        self.buffer.clear();
 
-        // layout -> update (живых виджетов) -> paint
-        layout_equal_split(
-            elem,
-            Rect { x: 0, y: 0, width: buffer_width, height: body_height },
-        );
-
-        if let Err(e) = update_tree(elem) {
-            self.error_row.set_message(e.message);
-        }
-
-        match paint(&mut self.buffer, elem) {
-            Ok(_) => self.error_row.clear(),
-            Err(e) => self.error_row.set_message(e.message),
+        // Render all routes (bottom to top)
+        for route in &mut self.routes {
+            route.render(&mut self.buffer, area)?;
         }
 
         // error row
@@ -214,19 +185,6 @@ impl App {
             &mut self.buffer,
             Rect { x: 0, y: status_y, width: buffer_width, height: 1 },
         )?;
-
-        // render dialog on top if visible
-        if let Some(ref mut dialog) = self.dialog {
-            if dialog.is_visible() {
-                let dialog_area = Rect {
-                    x: 0,
-                    y: 0,
-                    width: buffer_width,
-                    height: buffer_height
-                };
-                dialog.render(&mut self.buffer, dialog_area)?;
-            }
-        }
 
         Ok(())
     }
@@ -307,7 +265,7 @@ impl App {
                         code: KeyCode::Char('h'),
                         modifiers: KeyModifiers::NONE,
                         ..
-                    }) => self.toggle_help_dialog(),
+                    }) => self.toggle_help(),
                     Event::Resize(width, height) => self.resize(width, height),
                     _ => (),
                 }
