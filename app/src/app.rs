@@ -1,7 +1,13 @@
-use super::app_error::AppError;
-use super::buffer::{Buffer, Cell, Color, Patch};
-use super::widget::Rect;
-use crate::tui::widget::Widget; // ВАЖНО: трейт в скоуп, чтобы вызывать render()/update()
+use tiny_tui::{
+    app_error::AppError,
+    buffer::{Buffer, Cell, Color, Patch},
+    widget::Rect,
+    widget::Widget,
+    text_widget::TextWidget,
+    widgets::dialog_widget::DialogWidget,
+    engine::{layout_equal_split, paint, reconcile, update_tree, VNode, IntoNode, Key, Direction},
+    cell_types::CellString,
+};
 
 use crossterm::{
     cursor,
@@ -16,13 +22,8 @@ use std::io::{stdout, Stdout, Write};
 use std::mem;
 use std::time::Duration;
 
-use crate::tui::cell_types::CellString;
-use crate::tui::engine::{
-    layout_equal_split, paint, reconcile, update_tree, Direction, Element, Key, VNode,
-};
-use crate::{get_version, TextWidget};
-use crate::tui::engine::IntoNode; // для app.add_child(...)
-use crate::tui::widgets::dialog_widget::DialogWidget;
+use crate::utils::version_checker::get_version;
+use tiny_tui::engine::Element;
 
 struct ErrorRow {
     visible: bool,
@@ -182,7 +183,7 @@ impl App {
         if let Some(elem) = &mut self.root_elem {
             reconcile(elem, &root_vnode);
         } else {
-            self.root_elem = Some(crate::tui::engine::mount(&root_vnode));
+            self.root_elem = Some(tiny_tui::engine::mount(&root_vnode));
         }
         let elem = self.root_elem.as_mut().unwrap();
 
@@ -320,4 +321,3 @@ impl App {
         Ok(())
     }
 }
-

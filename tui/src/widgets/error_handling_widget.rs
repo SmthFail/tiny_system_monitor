@@ -1,7 +1,7 @@
-use crate::tui::buffer::Buffer;
-use crate::tui::widget::{Widget, Rect, ChildConstraints};
-use crate::tui::app_error::AppError;
-use crate::tui::widgets::error_widget::ErrorWidget;
+use crate::buffer::Buffer;
+use crate::widget::{Widget, Rect, ChildConstraints};
+use crate::app_error::AppError;
+use crate::widgets::error_widget::ErrorWidget;
 
 pub struct ErrorHandlingWidget {
     widget: Box<dyn Widget>,
@@ -29,26 +29,21 @@ impl ErrorHandlingWidget {
 impl Widget for ErrorHandlingWidget {
     fn render(&mut self, buf: &mut Buffer, area: Rect) -> Result<(), AppError> {
         if self.is_error_state {
-            // Try to render the error widget, fallback to a default error widget if needed
             if let Some(ref mut error_widget) = self.error_widget {
                 return error_widget.render(buf, area);
             } else if let Some(ref last_error) = self.last_error {
                 let mut default_error_widget = ErrorWidget::new(last_error);
                 return default_error_widget.render(buf, area);
             } else {
-                // Fallback: create a generic error widget
                 let mut fallback_error_widget = ErrorWidget::new_with_message("An unknown error occurred");
                 return fallback_error_widget.render(buf, area);
             }
         } else {
-            // Try to render the main widget
             match self.widget.render(buf, area) {
                 Ok(()) => Ok(()),
                 Err(e) => {
-                    // Switch to error state
                     self.is_error_state = true;
                     self.last_error = Some(e.clone());
-                    // Render the error widget
                     if let Some(ref mut error_widget) = self.error_widget {
                         error_widget.render(buf, area)
                     } else {
@@ -84,11 +79,9 @@ impl Widget for ErrorHandlingWidget {
                 Ok(())
             }
         } else {
-            // Try to update the main widget
             match self.widget.update() {
                 Ok(()) => Ok(()),
                 Err(e) => {
-                    // Switch to error state
                     self.is_error_state = true;
                     self.last_error = Some(e);
                     if let Some(ref mut error_widget) = self.error_widget {

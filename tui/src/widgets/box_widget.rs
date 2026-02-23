@@ -1,10 +1,6 @@
-use crate::{
-    Widget,
-    Buffer,
-};
-use crate::tui::widget::{Rect, ChildConstraints};
-use crate::tui::app_error::AppError;
-use crate::tui::buffer::Cell;
+use crate::widget::{Widget, Rect, ChildConstraints};
+use crate::buffer::{Buffer, Cell};
+use crate::app_error::AppError;
 
 
 
@@ -22,7 +18,7 @@ impl BoxWidget {
 
     pub fn border(mut self, border: bool) -> Self {
         self.border = border;
-        self 
+        self
     }
 
     pub fn child(mut self, child: impl Widget + 'static) -> Self {
@@ -50,9 +46,9 @@ impl BoxWidget {
         buff.set_cell(x1, y2, Cell::new('└'));
         buff.set_cell(x2, y2, Cell::new('┘'));
 
-        
+
         // generate top border with name
-        
+
         let mut top_border = vec!['─'; area.width.into()];
         if !self.name.is_empty() {
             let mut chars: Vec<char> = self.name.chars().collect();
@@ -89,7 +85,7 @@ impl BoxWidget {
 
 impl Widget for BoxWidget {
     fn render(&mut self, buff: &mut Buffer, area: Rect) -> Result<(), AppError> {
-        
+
         let child_area =if self.border {
             self.draw_border(buff, area);
             Rect {
@@ -135,7 +131,7 @@ impl Widget for BoxWidget {
                 box_constraints
 
             },
-            None => box_constraints 
+            None => box_constraints
         }
     }
 

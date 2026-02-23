@@ -1,4 +1,5 @@
 use minreq;
+use std::env;
 
 pub fn get_version() -> String {
     let owner = "SmthFail";
@@ -50,4 +51,3 @@ fn extract_tag_name(body: &str) -> Option<String> {
     }
     None
 }
-

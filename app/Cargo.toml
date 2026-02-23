@@ -1,0 +1,15 @@
+[package]
+name = "tsm"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "tsm"
+path = "src/main.rs"
+
+[dependencies]
+tiny_tui = { path = "../tui" }
+sysinfo = {version = "0.36.1", default-features = false, features=["system", "network"]}
+nvml-wrapper = {version = "0.11.0", default-features=false}
+minreq = {version = "2.13.4", features = ["https"] }
+crossterm = "0.26.1"

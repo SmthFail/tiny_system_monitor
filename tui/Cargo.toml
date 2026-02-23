@@ -1,0 +1,11 @@
+[package]
+name = "tiny_tui"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+
+[dependencies]
+crossterm = "0.26.1"
+unicode-width = "0.1"
+once_cell = "1.18"

@@ -1,13 +1,12 @@
 use sysinfo::Networks;
-use crate::tui::widget::{Widget, Rect, ChildConstraints};
-use std::time::Instant;
-use crate::TextWidget;
-use crate::Buffer;
-
-use crate::tui::{
+use tiny_tui::{
+    widget::{Widget, Rect, ChildConstraints},
+    buffer::Buffer,
     app_error::AppError,
-    cell_types::CellString
+    cell_types::CellString,
+    text_widget::TextWidget
 };
+use std::time::Instant;
 
 
 
@@ -25,7 +24,7 @@ impl NetworkInfo {
     pub fn new() -> Self {
         let networks = Networks::new_with_refreshed_list();
         let previous_time = Instant::now();
-        
+
         let mut previous_tx = 0;
         let mut previous_rx = 0;
 
@@ -35,7 +34,7 @@ impl NetworkInfo {
         }
 
         //calculate constraints
-        
+
         let constraints = ChildConstraints {
             min_width: None,
             max_width: None,
@@ -48,7 +47,7 @@ impl NetworkInfo {
         let dumb_string = Self::format_rate_string(0.0, 0.0);
         let mut rate_string = CellString::new();
         rate_string.update(dumb_string);
-        
+
         let ui = Box::new(TextWidget::new_editable(rate_string.clone()));
 
         NetworkInfo {
@@ -76,13 +75,13 @@ impl NetworkInfo {
         } else {
             format!("{:.2} B/s", bytes_per_sec)
         }
-        
+
 
     }
 
     fn format_rate_string(rx: f64, tx: f64) -> String  {
-        format!("Rx: {}, Tx: {}", 
-            Self::format_speed(rx), 
+        format!("Rx: {}, Tx: {}",
+            Self::format_speed(rx),
             Self::format_speed(tx)
             )
     }
@@ -108,7 +107,7 @@ impl NetworkInfo {
         self.previous_rx = current_rx;
         self.previous_tx = current_tx;
         self.previous_time = current_time;
-        
+
     }
 }
 
@@ -124,10 +123,8 @@ impl Widget for NetworkInfo {
         self.ui.update()?;
         Ok(())
     }
-   
+
     fn get_constraints(&self) -> ChildConstraints {
-       self.constraints.clone() // TODO
+       self.constraints.clone()
     }
 }
-
-

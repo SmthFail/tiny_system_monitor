@@ -3,19 +3,18 @@ use nvml_wrapper::enum_wrappers::device::TemperatureSensor;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use crate::Buffer;
-use crate::tui::widget::{Widget, Rect, ChildConstraints};
-use nvml_wrapper::{Nvml, error::NvmlError};
-use nvml_wrapper::enum_wrappers::device::PcieUtilCounter;
-use crate::tui::{
+use tiny_tui::{
+    buffer::Buffer,
+    widget::{Widget, Rect, ChildConstraints},
     container_widget::{Container, Layout, Alignment},
     progress_bar_widget::ProgressBar,
     text_widget::TextWidget,
     app_error::AppError,
-    cell_types::CellString
+    cell_types::CellString,
+    widgets::error_widget::ErrorWidget
 };
-
-
+use nvml_wrapper::{Nvml, error::NvmlError};
+use nvml_wrapper::enum_wrappers::device::PcieUtilCounter;
 
 use std::ffi::OsStr;
 
@@ -214,9 +213,9 @@ impl GpuInfo{
         }
 
         let candidates: &[&str] = &[
-            "libnvidia-ml.so",            
+            "libnvidia-ml.so",
             "libnvidia-ml.so.1",
-        ]; 
+        ];
 
         for &name in candidates {
             let lib_path = OsStr::new(name);
@@ -254,7 +253,6 @@ impl Widget for GpuInfo {
     fn render(&mut self, buf: &mut Buffer, area: Rect) -> Result<(), AppError> {
         if let Some(ref error) = self.initialization_error {
             // If there was an initialization error, show an error widget instead
-            use crate::tui::widgets::error_widget::ErrorWidget;
             let mut error_widget = ErrorWidget::new(error);
             return error_widget.render(buf, area);
         }

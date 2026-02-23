@@ -2,13 +2,13 @@ use sysinfo::System;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::tui::{
+use tiny_tui::{
     container_widget::{Container, Layout, Alignment},
     progress_bar_widget::ProgressBar,
-    app_error::AppError
+    app_error::AppError,
+    buffer::Buffer,
+    widget::{Widget, Rect, ChildConstraints}
 };
-use crate::Buffer;
-use crate::tui::widget::{Widget, Rect, ChildConstraints};
 
 
 pub struct CpuInfo {
@@ -31,18 +31,18 @@ impl CpuInfo {
         let cpus_usage = (0..cpu_count)
             .map(|_| Rc::new(RefCell::new(0.0)))
             .collect::<Vec<_>>();
-        
+
         let ram_used =  Rc::new(RefCell::new(0.0));
         let ram_total =  Rc::new(RefCell::new(1.0));
         let swap_used =  Rc::new(RefCell::new(0.0));
         let swap_total =  Rc::new(RefCell::new(1.0));
-      
-        // create ui 
+
+        // create ui
         let mut ui = Container::new(None, None, Layout::Vertical, Alignment::Start);
-        
+
         // cpus container
         let mut cpus_container = Container::new(None, None, Layout::Grid, Alignment::Start);
-        
+
         let total_progress = Rc::new(RefCell::new(100.0));
         for (i, cpu_usage) in cpus_usage.iter().enumerate() {
             let cpu_progress = ProgressBar::new(
@@ -61,17 +61,17 @@ impl CpuInfo {
 
         ui.add_child(ram_progress);
         ui.add_child(swap_progress);
-        
+
         CpuInfo {
             sys,
             cpus_usage,
-            ram_used, 
-            ram_total, 
-            swap_used, 
-            swap_total, 
-            ui: Box::new(ui) 
+            ram_used,
+            ram_total,
+            swap_used,
+            swap_total,
+            ui: Box::new(ui)
         }
-        
+
     }
 
     fn update_data(&mut self) {

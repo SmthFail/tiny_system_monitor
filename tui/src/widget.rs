@@ -28,7 +28,7 @@ impl WidgetBox {
 pub struct Rect {
     pub x: u16,
     pub y: u16,
-    pub width: u16, 
+    pub width: u16,
     pub height: u16,
 }
 
@@ -64,7 +64,7 @@ impl AddAssign<u16> for ChildConstraints {
 }
 
 impl AddAssign for ChildConstraints {
-    
+
 
     fn add_assign(&mut self, rhs: Self) {
         fn add(a: Option<u16>, b: Option<u16>) -> Option<u16> {

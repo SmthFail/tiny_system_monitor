@@ -1,8 +1,8 @@
-use crate::tui::buffer::Buffer;
-use crate::tui::widget::{Widget, Rect, ChildConstraints};
-use crate::tui::app_error::AppError;
-use crate::tui::text_widget::TextWidget;
-use crate::tui::widgets::box_widget::BoxWidget;
+use crate::buffer::Buffer;
+use crate::widget::{Widget, Rect, ChildConstraints};
+use crate::app_error::AppError;
+use crate::text_widget::TextWidget;
+use crate::widgets::box_widget::BoxWidget;
 
 pub struct DialogWidget {
     box_widget: BoxWidget,
@@ -12,7 +12,7 @@ pub struct DialogWidget {
 impl DialogWidget {
     pub fn new(title: &str, message: &str) -> Self {
         let text_widget = TextWidget::new_static(message)
-            .max_lines(10); // Allow up to 10 lines for dialog content
+            .max_lines(10);
 
         let box_widget = BoxWidget::new()
             .border(true)
@@ -48,9 +48,8 @@ impl Widget for DialogWidget {
             return Ok(());
         }
 
-        // Calculate centered position for the dialog - make it smaller for simple help text
-        let dialog_width = std::cmp::min(25u16, area.width.saturating_sub(2));  // Small width, max available width - 2
-        let dialog_height = std::cmp::min(5u16, area.height.saturating_sub(2)); // Small height, max available height - 2
+        let dialog_width = std::cmp::min(25u16, area.width.saturating_sub(2));
+        let dialog_height = std::cmp::min(5u16, area.height.saturating_sub(2));
         let x = area.x + (area.width - dialog_width) / 2;
         let y = area.y + (area.height - dialog_height) / 2;
 
@@ -61,23 +60,20 @@ impl Widget for DialogWidget {
             height: dialog_height,
         };
 
-        // First, fill the entire dialog area with a background to ensure no artifacts remain
         for y_pos in dialog_area.y..(dialog_area.y + dialog_area.height) {
             for x_pos in dialog_area.x..(dialog_area.x + dialog_area.width) {
                 if x_pos < buf.width && y_pos < buf.height {
-                    let cell = crate::tui::buffer::Cell::new(' ').bg(Some(crate::tui::buffer::Color::Black));
+                    let cell = crate::buffer::Cell::new(' ').bg(Some(crate::buffer::Color::Black));
                     buf.set_cell(x_pos, y_pos, cell);
                 }
             }
         }
 
-        // Then render the box widget
         self.box_widget.render(buf, dialog_area)
     }
 
     fn get_constraints(&self) -> ChildConstraints {
         if self.is_visible {
-            // When visible, set more reasonable constraints for a dialog
             ChildConstraints {
                 min_width: Some(20),
                 max_width: Some(60),
@@ -85,7 +81,6 @@ impl Widget for DialogWidget {
                 max_height: Some(15),
             }
         } else {
-            // When hidden, it doesn't require any space
             ChildConstraints {
                 min_width: Some(0),
                 max_width: Some(0),

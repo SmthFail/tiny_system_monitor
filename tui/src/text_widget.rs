@@ -1,7 +1,7 @@
 use super::buffer::{Buffer, Cell, Color};
 use super::widget::{Widget, Rect, ChildConstraints};
 use super::app_error::AppError;
-use crate::tui::cell_types::CellString;
+use crate::cell_types::CellString;
 
 // Helper function to wrap text to fit within specified width
 fn wrap_text(text: &str, max_width: usize, max_lines: usize) -> Vec<String> {
@@ -40,12 +40,11 @@ fn wrap_line(text: &str, max_width: usize) -> Vec<String> {
     if words.is_empty() {
         if !text.is_empty() {
             // If text contains only whitespace or special characters, handle it appropriately
-            lines.push(text.to_string());
+            return vec![text.to_string()];
         } else {
             // Empty text
-            lines.push(String::new());
+            return vec![String::new()];
         }
-        return lines;
     }
 
     let mut current_line = String::new();
@@ -74,7 +73,7 @@ fn wrap_line(text: &str, max_width: usize) -> Vec<String> {
                 // Word is longer than max_width, break it into chunks
                 let word_chars: Vec<char> = word.chars().collect();
                 let chunks: Vec<String> = word_chars
-                    .chunks(max_width.saturating_sub(1)) // -1 to potentially allow for continuation chars
+                    .chunks(max_width.saturating_sub(1))
                     .map(|chunk| chunk.iter().collect())
                     .collect();
 
@@ -154,53 +153,42 @@ impl Widget for TextWidget {
         let max_height = area.height as usize;
 
         if max_width < 3 {
-            // TODO set bg to amber when bg will be added
             return Err(AppError::warning("Overflowed!"))
         }
 
-        // Handle the borrowing issue by getting the string content inside the match
         let text_content = match &self.text {
-            TextSource::Static(s) => s.clone(), // Get owned string
-            TextSource::Editable(s) => s.get_str(), // Get owned string
+            TextSource::Static(s) => s.clone(),
+            TextSource::Editable(s) => s.get_str(),
         };
 
-        // Determine the maximum number of lines to display
         let max_lines = self.max_lines.unwrap_or(1) as usize;
         let effective_max_lines = std::cmp::min(max_lines, max_height);
 
-        // Split text into lines
         let text_lines = wrap_text(&text_content, max_width, effective_max_lines);
 
-        // If there are more lines than allowed by max_lines, we need to indicate overflow
         let has_overflow = text_lines.len() > effective_max_lines;
 
-        // Render each line
         for (line_idx, line) in text_lines.iter().take(effective_max_lines).enumerate() {
             let y = area.y + line_idx as u16;
 
             if y >= buff.height {
-                break; // Don't render outside the buffer
+                break;
             }
 
             let line_chars: Vec<char> = line.chars().collect();
             let mut truncated_line = line_chars;
 
-            // Check if the current line needs to be truncated
             let is_last_shown_line = line_idx == effective_max_lines - 1;
 
             if truncated_line.len() > max_width {
                 if is_last_shown_line && has_overflow {
-                    // If this is the last line we're showing and there are more lines
-                    // coming after, add "...more" indicator (3 chars)
                     if max_width >= 3 {
                         truncated_line.truncate(max_width - 3);
                         truncated_line.extend_from_slice(&['.', '.', '.']);
                     } else {
-                        // If max_width is too small to show "..."
                         truncated_line.truncate(max_width);
                     }
                 } else if truncated_line.len() > max_width {
-                    // If line is too long but not the overflow case, truncate with "…"
                     if max_width >= 1 {
                         truncated_line.truncate(max_width - 1);
                         truncated_line.push('…');
@@ -210,7 +198,6 @@ impl Widget for TextWidget {
                 }
             }
 
-            // Render characters of this line
             for (char_idx, ch) in truncated_line.iter().enumerate() {
                 let x = area.x + char_idx as u16;
                 if x < buff.width {
@@ -219,7 +206,6 @@ impl Widget for TextWidget {
                 }
             }
 
-            // Fill remaining space on line with background color
             for char_idx in truncated_line.len()..max_width {
                 let x = area.x + char_idx as u16;
                 if x < buff.width {
@@ -233,11 +219,6 @@ impl Widget for TextWidget {
     }
 
     fn get_constraints(&self) -> ChildConstraints {
-        let _text_content = match &self.text {
-            TextSource::Static(s) => s.clone(), // Get owned string
-            TextSource::Editable(s) => s.get_str(), // Get owned string
-        };
-
         let has_multiline = self.max_lines.is_some() && self.max_lines.unwrap() > 1;
 
         let mut constraints = ChildConstraints {
@@ -247,7 +228,6 @@ impl Widget for TextWidget {
             max_height: if has_multiline { self.max_lines } else { Some(1) },
         };
 
-        // If we have a max_lines constraint, set max_height accordingly
         if let Some(max_lines) = self.max_lines {
             constraints.max_height = Some(max_lines);
         }

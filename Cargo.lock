@@ -439,15 +439,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "tiny_system_monitor"
+name = "tiny_tui"
+version = "0.3.9"
+dependencies = [
+ "crossterm",
+ "once_cell",
+ "unicode-width",
+]
+
+[[package]]
+name = "tsm"
 version = "0.3.9"
 dependencies = [
  "crossterm",
  "minreq",
  "nvml-wrapper",
- "once_cell",
  "sysinfo",
- "unicode-width",
+ "tiny_tui",
 ]
 
 [[package]]

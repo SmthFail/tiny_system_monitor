@@ -24,4 +24,3 @@ impl CellString {
         self.data.borrow_mut().clone()
     }
 }
-

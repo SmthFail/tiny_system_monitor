@@ -3,9 +3,9 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use crate::tui::app_error::AppError;
-use crate::tui::buffer::Buffer;
-use crate::tui::widget::{Rect, Widget};
+use crate::app_error::AppError;
+use crate::buffer::Buffer;
+use crate::widget::{Rect, Widget};
 
 // ---------------- keys & layout direction ----------------
 
@@ -322,4 +322,3 @@ pub fn reconcile(prev: &mut Element, next: &VNode) {
         }
     }
 }
-

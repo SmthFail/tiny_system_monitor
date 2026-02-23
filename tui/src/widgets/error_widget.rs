@@ -1,7 +1,7 @@
-use crate::tui::buffer::{Buffer, Color};
-use crate::tui::widget::{Widget, Rect, ChildConstraints};
-use crate::tui::app_error::AppError;
-use crate::tui::text_widget::TextWidget;
+use crate::buffer::{Buffer, Color};
+use crate::widget::{Widget, Rect, ChildConstraints};
+use crate::app_error::AppError;
+use crate::text_widget::TextWidget;
 
 pub struct ErrorWidget {
     message: String,
@@ -21,7 +21,6 @@ impl ErrorWidget {
 
 impl Widget for ErrorWidget {
     fn render(&mut self, buf: &mut Buffer, area: Rect) -> Result<(), AppError> {
-        // Display error message in the full area (the parent BoxWidget handles the border)
         let mut text_widget = TextWidget::new_static(&self.message)
             .set_color(Some(Color::Red), Some(Color::Black))
             .max_lines(area.height);
@@ -33,9 +32,9 @@ impl Widget for ErrorWidget {
 
     fn get_constraints(&self) -> ChildConstraints {
         ChildConstraints {
-            min_width: Some(5),  // Minimum width to show a short error message
+            min_width: Some(5),
             max_width: None,
-            min_height: Some(1), // Minimum height to show text
+            min_height: Some(1),
             max_height: None,
         }
     }
