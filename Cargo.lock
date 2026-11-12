@@ -451,7 +451,6 @@ dependencies = [
 name = "tsm"
 version = "0.3.9"
 dependencies = [
- "crossterm",
  "minreq",
  "nvml-wrapper",
  "sysinfo",

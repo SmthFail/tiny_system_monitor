@@ -1,6 +1,8 @@
+pub mod app;
 pub mod app_error;
 pub mod buffer;
 pub mod cell_types;
+pub mod session;
 pub mod widget;
 pub mod widgets;
 pub mod engine;

@@ -2,8 +2,8 @@ mod utils;
 mod devices;
 use crate::devices::{cpu_info, gpu_info, network_info};
 
-mod app;
-use app::App;
+use tiny_tui::app::App;
+use tiny_tui::session::Session;
 use tiny_tui::widgets::container_widget::{Container, Alignment, Layout};
 use tiny_tui::widgets::box_widget::BoxWidget;
 use tiny_tui::widgets::error_wrappers::with_error_handling;
@@ -17,10 +17,9 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
 
-    let mut app = App::new().unwrap_or_else(|e| {
-        eprintln!("Init app error: {}", e.message);
-        std::process::exit(1)
-    });
+    let version = utils::version_checker::get_version();
+
+    let mut app = App::new(version);
 
     // Create main route with all widgets
     let mut h_container = Container::new(None, None, Layout::Horizontal, Alignment::Start);
@@ -64,7 +63,12 @@ fn main() {
         };
     };
 
-    if let Err(e) = app.run() {
+    let mut session = Session::new(app).unwrap_or_else(|e| {
+        eprintln!("Init app error: {}", e.message);
+        std::process::exit(1)
+    });
+
+    if let Err(e) = session.run() {
         eprintln!("App exited with error: {}", e.message);
         std::process::exit(1);
     };
