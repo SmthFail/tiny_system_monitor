@@ -3,8 +3,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use tiny_tui::{
-    container_widget::{Container, Layout, Alignment},
-    progress_bar_widget::ProgressBar,
+    widgets::container_widget::{Container, Layout, Alignment},
+    widgets::progress_bar_widget::ProgressBar,
     app_error::AppError,
     buffer::Buffer,
     widget::{Widget, Rect, ChildConstraints}

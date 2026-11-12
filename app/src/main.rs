@@ -4,7 +4,7 @@ use crate::devices::{cpu_info, gpu_info, network_info};
 
 mod app;
 use app::App;
-use tiny_tui::container_widget::{Container, Alignment, Layout};
+use tiny_tui::widgets::container_widget::{Container, Alignment, Layout};
 use tiny_tui::widgets::box_widget::BoxWidget;
 use tiny_tui::widgets::error_wrappers::with_error_handling;
 use tiny_tui::route::Route;

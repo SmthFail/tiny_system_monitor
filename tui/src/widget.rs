@@ -1,5 +1,5 @@
-use super::buffer::Buffer;
-use super::app_error::AppError;
+use crate::buffer::Buffer;
+use crate::app_error::AppError;
 use std::ops::{AddAssign, Add};
 use std::any::type_name;
 

@@ -1,6 +1,6 @@
-use super::buffer::{Buffer, Cell, Color};
-use super::widget::{Widget, Rect, ChildConstraints};
-use super::app_error::AppError;
+use crate::buffer::{Buffer, Cell, Color};
+use crate::widget::{Widget, Rect, ChildConstraints};
+use crate::app_error::AppError;
 use crate::cell_types::CellString;
 
 // Helper function to wrap text to fit within specified width

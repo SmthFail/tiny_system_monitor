@@ -4,7 +4,7 @@ use tiny_tui::{
     buffer::Buffer,
     app_error::AppError,
     cell_types::CellString,
-    text_widget::TextWidget
+    widgets::text_widget::TextWidget
 };
 use std::time::Instant;
 

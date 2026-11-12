@@ -1,5 +1,5 @@
-use super::widget::{Widget, Rect, ChildConstraints};
-use super::{
+use crate::widget::{Widget, Rect, ChildConstraints};
+use crate::{
     buffer::{Buffer, Cell as buffCell, Color},
     app_error::AppError
 };

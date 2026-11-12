@@ -1,7 +1,7 @@
 // src/tui/container_widget.rs
 
-use super::{
-    widget::{Widget, Rect, ChildConstraints, WidgetBox},
+use crate::widget::{Widget, Rect, ChildConstraints, WidgetBox};
+use crate::{
     buffer::{Buffer, Cell},
     app_error::AppError,
 };

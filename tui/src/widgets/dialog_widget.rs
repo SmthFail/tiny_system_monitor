@@ -1,9 +1,8 @@
 use crate::buffer::Buffer;
 use crate::widget::{Widget, Rect, ChildConstraints};
 use crate::app_error::AppError;
-use crate::text_widget::TextWidget;
+use crate::widgets::text_widget::TextWidget;
 use crate::widgets::box_widget::BoxWidget;
-
 pub struct DialogWidget {
     box_widget: BoxWidget,
     is_visible: bool,

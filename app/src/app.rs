@@ -2,7 +2,7 @@ use tiny_tui::{
     app_error::AppError,
     buffer::{Buffer, Cell, Color, Patch},
     widget::{Rect, Widget},
-    text_widget::TextWidget,
+    widgets::text_widget::TextWidget,
     cell_types::CellString,
     route::Route,
 };

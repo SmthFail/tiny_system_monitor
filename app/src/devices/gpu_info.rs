@@ -6,9 +6,9 @@ use std::cell::RefCell;
 use tiny_tui::{
     buffer::Buffer,
     widget::{Widget, Rect, ChildConstraints},
-    container_widget::{Container, Layout, Alignment},
-    progress_bar_widget::ProgressBar,
-    text_widget::TextWidget,
+    widgets::container_widget::{Container, Layout, Alignment},
+    widgets::progress_bar_widget::ProgressBar,
+    widgets::text_widget::TextWidget,
     app_error::AppError,
     cell_types::CellString,
     widgets::error_widget::ErrorWidget

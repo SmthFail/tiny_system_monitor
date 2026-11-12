@@ -73,7 +73,7 @@ impl Route {
     }
 
     /// Layout and render this route
-    pub fn render(&mut self, buffer: &mut super::buffer::Buffer, area: super::widget::Rect) -> Result<(), super::app_error::AppError> {
+    pub fn render(&mut self, buffer: &mut super::buffer::Buffer, area: crate::widget::Rect) -> Result<(), super::app_error::AppError> {
         self.ensure_element();
 
         if let Some(elem) = self.element_mut() {

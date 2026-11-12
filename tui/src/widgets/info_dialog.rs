@@ -1,7 +1,7 @@
 use crate::buffer::{Buffer, Cell, Color};
 use crate::widget::{Widget, Rect, ChildConstraints};
 use crate::app_error::AppError;
-use crate::text_widget::TextWidget;
+use crate::widgets::text_widget::TextWidget;
 use crate::widgets::box_widget::BoxWidget;
 
 /// A centered info dialog that displays a title and message
